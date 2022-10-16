@@ -43,16 +43,14 @@ def tearDownChannel(ch):
 
 print("canlib version:", clb.dllversion())
 ch0 = setUpChannel(channel=0)
-ch1 = setUpChannel(channel=1)
-frame = canlib.Frame(
-    id_=100,
-    data=[1, 2, 3, 4],
-    flags=clb.MessageFlag.EXT
-)
-ch1.write(frame)
+
+frame = canlib.Frame(id_=100, data=[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88], flags=clb.MessageFlag.EXT)
+
+ch0.write(frame)
+
 while True:
     try:
-        frame = ch0.read()
+        
         print(frame)
         break
     except clb.canNoMsg:
@@ -60,4 +58,3 @@ while True:
     except clb.canError as ex:
         print(ex)
 tearDownChannel(ch0)
-tearDownChannel(ch1)
