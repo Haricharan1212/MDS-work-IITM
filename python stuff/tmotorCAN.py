@@ -54,7 +54,7 @@ def uint_to_float(x_int, x_min, x_max, bits):
     return pgg
 
 #Data creation functions
-def EnterMotorMode():
+def enter_motor_mode():
     """Function which creates array to turn the motor ON in MIT motor mode"""
     
     buf = [0 for i in range(8)]
@@ -69,7 +69,7 @@ def EnterMotorMode():
 
     return buf
 
-def ExitMotorMode():
+def exit_motor_mode():
     """Function which creates array to turn the motor OFF in MIT motor mode"""
 
     buf = [0 for i in range(8)]
@@ -85,7 +85,7 @@ def ExitMotorMode():
     
     return buf
 
-def Zero():
+def zero():
     
     """Function which creates array to make the motor come to ZERO position"""
 
