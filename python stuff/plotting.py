@@ -1,0 +1,49 @@
+from matplotlib import pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+fig = plt.figure()
+ax1 = fig.add_subplot(1,3,1)
+ax2 = fig.add_subplot(1,3,2)
+ax3 = fig.add_subplot(1,3,3)
+
+
+def animate(i):
+    graph_data = open('output_data.txt','r').read()
+    lines = graph_data.split('\n')
+    t = []
+    p = []
+    v = []
+    to = []
+    
+    for line in lines:
+        if len(line) > 1:
+            time, p_out, v_out, t_out = line.split(',')
+            
+            t.append(float(time))
+            p.append(float(p_out))
+            v.append(float(v_out))
+            to.append(float(t_out))
+
+    ax1.clear()
+    ax2.clear()
+    ax3.clear()
+
+    ax1.set_label("p_out")
+    ax2.set_label("v_out")
+    ax3.set_label("t_out")
+
+    ax1.set_xlim(0, 40)
+    ax2.set_xlim(0, 40)
+    ax3.set_xlim(0, 40)
+
+    ax1.set_ylim(-1, 1)
+    ax2.set_ylim(-2, 2)
+    ax3.set_ylim(-10, 10)
+
+            
+    ax1.plot(t, p)
+    ax2.plot(t, v)
+    ax3.plot(t, to)
+
+ani = FuncAnimation(fig, animate, interval=1000)
+plt.show()
