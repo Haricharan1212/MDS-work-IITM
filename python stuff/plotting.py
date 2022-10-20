@@ -29,9 +29,9 @@ def animate(i):
 
     current_time = t[len(t) - 1]
 
-    ax1.set_label("p_out")
-    ax2.set_label("v_out")
-    ax3.set_label("t_out")
+    ax1.set_title("$p_{out}$")
+    ax2.set_title("$v_{out}$")
+    ax3.set_title("$t_{out}$")
 
     ax1.set_xlim(current_time - 20, current_time)
     ax2.set_xlim(current_time - 20, current_time)
