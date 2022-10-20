@@ -14,14 +14,19 @@ def animate(i):
     p = []
     v = []
     to = []
+    th = []
+    omg = []
 
     for line in lines:
         if len(line) > 1:
-            time, p_out, v_out, t_out = line.split(',')
+            time, theta, p_out,omega, v_out, t_out = line.split(',')
             t.append(float(time))
             p.append(float(p_out))
             v.append(float(v_out))
             to.append(float(t_out))
+            th.append(float(theta))
+            omg.append(float(omega))
+
 
     ax1.clear()
     ax2.clear()
@@ -41,8 +46,11 @@ def animate(i):
     ax2.set_ylim(-3, 3)
     ax3.set_ylim(-50, 50)
 
+
     ax1.plot(t, p)
-    ax2.plot(t, v)
+    ax1.plot(t, th)
+    ax2.plot(t, v)    
+    ax2.plot(t, omg)
     ax3.plot(t, to)
     
     
