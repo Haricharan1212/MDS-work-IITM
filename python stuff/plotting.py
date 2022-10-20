@@ -14,11 +14,10 @@ def animate(i):
     p = []
     v = []
     to = []
-    
+
     for line in lines:
         if len(line) > 1:
             time, p_out, v_out, t_out = line.split(',')
-            
             t.append(float(time))
             p.append(float(p_out))
             v.append(float(v_out))
@@ -28,22 +27,25 @@ def animate(i):
     ax2.clear()
     ax3.clear()
 
+    current_time = t[len(t) - 1]
+
     ax1.set_label("p_out")
     ax2.set_label("v_out")
     ax3.set_label("t_out")
 
-    ax1.set_xlim(0, 40)
-    ax2.set_xlim(0, 40)
-    ax3.set_xlim(0, 40)
+    ax1.set_xlim(current_time - 20, current_time)
+    ax2.set_xlim(current_time - 20, current_time)
+    ax3.set_xlim(current_time - 20, current_time)
 
-    ax1.set_ylim(-1, 1)
-    ax2.set_ylim(-2, 2)
-    ax3.set_ylim(-10, 10)
+    ax1.set_ylim(-6.28, 6.28)
+    ax2.set_ylim(-3, 3)
+    ax3.set_ylim(-50, 50)
 
-            
     ax1.plot(t, p)
     ax2.plot(t, v)
     ax3.plot(t, to)
-
+    
+    
 ani = FuncAnimation(fig, animate, interval=1000)
+
 plt.show()
