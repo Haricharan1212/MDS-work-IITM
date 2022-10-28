@@ -16,17 +16,18 @@ def animate(i):
     to = []
     th = []
     omg = []
+    torq = []
 
     for line in lines:
         if len(line) > 1:
-            time, theta, p_out,omega, v_out, t_out = line.split(',')
+            time, theta, p_out,omega, v_out, torque, t_out = line.split(',')
             t.append(float(time))
             p.append(float(p_out))
             v.append(float(v_out))
             to.append(float(t_out))
             th.append(float(theta))
             omg.append(float(omega))
-
+            torq.append(torque)
 
     ax1.clear()
     ax2.clear()
@@ -34,9 +35,9 @@ def animate(i):
 
     current_time = t[len(t) - 1]
 
-    ax1.set_title("$p_{out}$")
-    ax2.set_title("$v_{out}$")
-    ax3.set_title("$t_{out}$")
+    ax1.set_title("Position")
+    ax2.set_title("Velocity")
+    ax3.set_title("Torque")
 
     ax1.set_xlim(current_time - 20, current_time)
     ax2.set_xlim(current_time - 20, current_time)
@@ -52,6 +53,7 @@ def animate(i):
     ax2.plot(t, v)    
     ax2.plot(t, omg)
     ax3.plot(t, to)
+    ax3.plot(t, torq)
     
     
 ani = FuncAnimation(fig, animate, interval=1000)

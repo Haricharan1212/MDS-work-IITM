@@ -101,7 +101,7 @@ def zero():
     
     return buf
     
-def pack_cmd(p_in, v_in, t_in, k_p, k_d):
+def pack_cmd(p_in, v_in, t_in, kp_, kd_):
     """Function which creates required array given p_in, v_in, t_in, k_p, k_d"""
 
     p_des = constrain(p_in, P_MIN, P_MAX)
