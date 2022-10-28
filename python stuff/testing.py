@@ -17,12 +17,12 @@ id_2 = 2
 # shape = np.shape(theta)
 
 # Delta is how much the vertical is offset from the actual zero of the motor
-delta_1 = -6.14 + 3.0
-delta_2 = -3.14
+delta_1 = -3.14
+delta_2 = -3.14 - 0.5
 
-torque = 30 # Why
-kp =  10
-kd = 1
+torque = 30.0 # Why
+kp =  10.0
+kd = 1.0
 
 #Makes motor come to centre position
 frame = canlib.Frame(id_= id_1, data=tmotorCAN.pack_cmd(delta_1, 0, torque, 500, kd), flags=clb.MessageFlag.STD)
@@ -39,16 +39,16 @@ file.close()
 
 start_time = time.time()
 
-for t in range(650):    
+for t in range(2000):    
     # Sending required trajectory position and velocity
     current_time = time.time()
     t = current_time - start_time
     
-    w = 1
+    w = 3
     theta_5 = trajectory.theta_5(w, t)
     omega_5 = trajectory.omega_5(w, t)
     
-    w = 1
+    w = 3
     theta_6 = trajectory.theta_6(w, t)
     omega_6 = trajectory.omega_6(w, t)
 
@@ -60,12 +60,16 @@ for t in range(650):
 
     try:                                
         # Writing required output data to a file
-        # output_msg = ch0.read().data
-        # p_out, v_out, t_out = tmotorCAN.unpack_reply(output_msg)
-        # file = open("output_data.txt", "a")
-        # file.writelines([str(t),"," , str(theta), "," , str(p_out), ",", str(omega), "," , str(v_out),"," , str(torque), "," , str(t_out), "\n"])
-        # file.close()
-       ...                     
+        output_msg = ch0.read().data
+        p_out, v_out, t_out = tmotorCAN.unpack_reply(output_msg)
+        file = open("output_data.txt", "a")
+        file.writelines([str(t),"," , str(theta_5), "," , str(p_out), ",", str(omega_5), "," , str(v_out),"," , str(torque), "," , str(t_out), ";"])
+        file.close()
+        output_msg = ch0.read().data
+        p_out, v_out, t_out = tmotorCAN.unpack_reply(output_msg)
+        file = open("output_data.txt", "a")
+        file.writelines([str(t),"," , str(theta_6), "," , str(p_out), ",", str(omega_6 - omega_5), "," , str(v_out),"," , str(torque), "," , str(t_out), "\n"])
+        file.close()
     except clb.canNoMsg:
         pass
     except clb.canError as ex:
