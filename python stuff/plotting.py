@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
+import numpy as np
 
 fig = plt.figure()
 ax1 = fig.add_subplot(2,3,1)
@@ -34,10 +35,10 @@ def animate(i):
 
             time, theta, p_out,omega, v_out, torque, t_out = a.split(',')
             t1.append(float(time))
-            p1.append(float(p_out))
+            p1.append(57.1 * float(p_out))
             v1.append(float(v_out))
             to1.append(float(t_out))
-            th1.append(float(theta))
+            th1.append(57.1 * float(theta))
             omg1.append(float(omega))
             torq1.append(float(torque))
 
@@ -61,13 +62,12 @@ def animate(i):
     current_time = t1[len(t1) - 1]
 
     ax1.set_title("Position: theta_5")
-    ax2.set_title("Velocity: theta_5")
+    ax2.set_title("Velocity: omega_5")
     ax3.set_title("Torque: theta_5")
     
     ax4.set_title("Position: theta_6")
     ax5.set_title("Velocity: theta_6")
     ax6.set_title("Torque: theta_6")
-
 
     ax1.set_xlim(current_time - 20, current_time)
     ax2.set_xlim(current_time - 20, current_time)
@@ -76,8 +76,8 @@ def animate(i):
     ax5.set_xlim(current_time - 20, current_time)
     ax6.set_xlim(current_time - 20, current_time)
 
-    ax1.set_ylim(-6.28, 6.28)
-    ax2.set_ylim(-3, 3)
+    ax1.set_ylim(-100, 100)
+    ax2.set_ylim(-10, 10)
     ax3.set_ylim(-50, 50)
     ax4.set_ylim(-6.28, 6.28)
     ax5.set_ylim(-3, 3)
@@ -85,17 +85,18 @@ def animate(i):
 
     ax1.plot(t1, p1)
     ax1.plot(t1, th1)
+    
     ax2.plot(t1, v1)    
     ax2.plot(t1, omg1)
-    ax3.plot(t1, to1)
-    ax3.plot(t1, torq1)
+    # ax3.plot(t1, to1)
+    # ax3.plot(t1, torq1)
     
-    ax4.plot(t2, p2)
-    ax4.plot(t2, th2)
-    ax5.plot(t2, v2)    
-    ax5.plot(t2, omg2)
-    ax6.plot(t2, to2)
-    ax6.plot(t2, torq2)
+    # ax4.plot(t2, [57.1 * i for i in p2])
+    # ax4.plot(t2, th2)
+    # ax5.plot(t2, v2)    
+    # ax5.plot(t2, omg2)
+    # ax6.plot(t2, to2)
+    # ax6.plot(t2, torq2)
     
 ani = FuncAnimation(fig, animate, interval=1000)
 

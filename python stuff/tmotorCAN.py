@@ -9,17 +9,9 @@ KD_MAX = 5.0
 T_MIN = -144.0
 T_MAX = 144.0
 
-p_in = 0.0
-v_in = 0.0
-kp_in = 10.0
-kd_in = 1.0
-t_in = 30.0
-
-p_out = 0.0
-v_out = 0.0
-t_out = 0.0
-
-motor_ID = 0x01
+kp_in = 50.0
+kd_in = 5.0
+t_in = 0.0
 
 #Helper functions
 def constrain(value, min_value, max_value):
@@ -101,7 +93,7 @@ def zero():
     
     return buf
     
-def pack_cmd(p_in, v_in, t_in, kp, kd):
+def pack_cmd(p_in, v_in, t_in = t_in):
     """Function which creates required array given p_in, v_in, t_in, k_p, k_d"""
 
     p_des = constrain(p_in, P_MIN, P_MAX)

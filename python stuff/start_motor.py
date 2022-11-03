@@ -11,5 +11,5 @@ ch0.write(frame)
 
 time.sleep(0.001)
 
-frame = canlib.Frame(id_= 2, data=tmotorCAN.enter_motor_mode(), flags=clb.MessageFlag.STD)
-ch0.write(frame)
+# frame = canlib.Frame(id_= 2, data=tmotorCAN.enter_motor_mode(), flags=clb.MessageFlag.STD)
+# ch0.write(frame)
