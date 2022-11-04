@@ -42,7 +42,7 @@ while True:
     output_msg = ch0.read().data
     p_out, v_out, t_out = tmotorCAN.unpack_reply(output_msg)
 
-    t_in = + 20 * np.sin(p_out)
+    t_in = + 10 * np.sin(p_out)
     p_in = p_out
     
     file = open("output_data.txt", "a")
