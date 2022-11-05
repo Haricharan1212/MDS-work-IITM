@@ -1,3 +1,5 @@
+
+# Defining some constants
 P_MIN = -12.5
 P_MAX = 12.5
 V_MIN = -8.0
@@ -9,9 +11,10 @@ KD_MAX = 5.0
 T_MIN = -144.0
 T_MAX = 144.0
 
+# Kp, Kd values, change here
+
 kp_in = 50.0
 kd_in = 5.0
-t_in = 0.0
 
 #Helper functions
 def constrain(value, min_value, max_value):
@@ -93,7 +96,7 @@ def zero():
     
     return buf
     
-def pack_cmd(p_in, v_in, t_in = t_in):
+def pack_cmd(p_in, v_in, t_in):
     """Function which creates required array given p_in, v_in, t_in, k_p, k_d"""
 
     p_des = constrain(p_in, P_MIN, P_MAX)

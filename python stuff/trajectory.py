@@ -61,11 +61,10 @@ def theta_6(w, t):
     a8 =    0.001966  
     b8 =   2.208e-05  
 
-    return a0 + a1*np.cos(t*w) + b1*np.sin(t*w) + a2*np.cos(2*t*w)
-    + b2*np.sin(2*t*w) + a3*np.cos(3*t*w) + b3*np.sin(3*t*w) 
-    + a4*np.cos(4*t*w) + b4*np.sin(4*t*w) + a5*np.cos(5*t*w) + b5*np.sin(5*t*w) 
+    return (a0 + a1*np.cos(t*w) + b1*np.sin(t*w) + a2*np.cos(2*t*w) + b2*np.sin(2*t*w) + a3*np.cos(3*t*w) + b3*np.sin(3*t*w) +   
+    a4*np.cos(4*t*w) + b4*np.sin(4*t*w) + a5*np.cos(5*t*w) + b5*np.sin(5*t*w) 
     + a6*np.cos(6*t*w) + b6*np.sin(6*t*w) + a7*np.cos(7*t*w) + b7*np.sin(7*t*w) 
-    + a8*np.cos(8*t*w) + b8*np.sin(8*t*w)
+    + a8*np.cos(8*t*w) + b8*np.sin(8*t*w))
 
 def omega_6(w, t): 
     
