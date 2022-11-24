@@ -37,65 +37,6 @@ def float_to_uint(x, x_min, x_max, bits):
         
     return int(pgg)
     
-def uint_to_float(x_int, x_min, x_max, bits):
-    """Function to convert unsigned integer x_int into it's float x equivalent"""
-    span = x_max - x_min
-    offset = x_min
-    pgg = 0
-    if (bits == 12):
-        pgg = x_int * span / 4095.0 + offset
-    elif (bits == 16):
-        pgg = x_int * span / 65535.0 + offset
-    return pgg
-
-#Data creation functions
-def enter_motor_mode():
-    """Function which creates array to turn the motor ON in MIT motor mode"""
-    
-    buf = [0 for i in range(8)]
-    buf[0] = 0xFF
-    buf[1] = 0xFF
-    buf[2] = 0xFF
-    buf[3] = 0xFF
-    buf[4] = 0xFF
-    buf[5] = 0xFF
-    buf[6] = 0xFF
-    buf[7] = 0xFC
-
-    return buf
-
-def exit_motor_mode():
-    """Function which creates array to turn the motor OFF in MIT motor mode"""
-
-    buf = [0 for i in range(8)]
-    
-    buf[0] = 0xFF
-    buf[1] = 0xFF
-    buf[2] = 0xFF
-    buf[3] = 0xFF
-    buf[4] = 0xFF
-    buf[5] = 0xFF
-    buf[6] = 0xFF
-    buf[7] = 0xFD
-    
-    return buf
-
-def zero():
-    
-    """Function which creates array to make the motor come to ZERO position"""
-
-    buf = [0 for i in range(8)]
-    buf[0] = 0x00
-    buf[1] = 0xFF
-    buf[2] = 0xFF
-    buf[3] = 0xFF
-    buf[4] = 0x02
-    buf[5] = 0x01
-    buf[6] = 0xFF
-    buf[7] = 0xFE
-    
-    return buf
-    
 def pack_cmd(p_in, v_in, t_in):
     """Function which creates required array given p_in, v_in, t_in, k_p, k_d"""
 
@@ -123,18 +64,4 @@ def pack_cmd(p_in, v_in, t_in):
     buf[7] = t_int & 0xFF
 
     return buf
-
-def unpack_reply(buf):
-    """Function which converts given array data into float format"""
-    
-    id = buf[0]
-    p_int = (buf[1] << 8) | buf[2]
-    v_int = (buf[3] << 4) | (buf[4] >> 4)
-    i_int = ((buf[4] & 0xF) << 8) | buf[5]
-    
-    p_out = uint_to_float(p_int, P_MIN, P_MAX, 16)
-    v_out = uint_to_float(v_int, V_MIN, V_MAX, 12)
-    t_out = uint_to_float(i_int, -T_MAX, T_MAX, 12)
-
-    return p_out, v_out, t_out
 

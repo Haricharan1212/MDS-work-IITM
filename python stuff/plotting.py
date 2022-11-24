@@ -11,45 +11,7 @@ ax5 = fig.add_subplot(2,3,5)
 ax6 = fig.add_subplot(2,3,6)
 
 def animate(i):
-    graph_data = open('output_data.txt','r').read()
-    lines = graph_data.split('\n')
-    t1 = []
-    p1 = []
-    v1 = []
-    to1 = []
-    th1 = []
-    omg1 = []
-    torq1 = []
-    t2 = []
-    p2 = []
-    v2 = []
-    to2 = []
-    th2 = []
-    omg2 = []
-    torq2 = []
-
-
-    for line in lines:
-        if len(line) > 1:
-            a, b = line.split(';')
-
-            time, theta, p_out,omega, v_out, torque, t_out = a.split(',')
-            t1.append(float(time))
-            p1.append(57.1 * float(p_out))
-            v1.append(float(v_out))
-            to1.append(float(t_out))
-            th1.append(57.1 * float(theta))
-            omg1.append(float(omega))
-            torq1.append(float(torque))
-
-            time, theta, p_out,omega, v_out, torque, t_out = b.split(',')
-            t2.append(float(time))
-            p2.append(float(p_out))
-            v2.append(float(v_out))
-            to2.append(float(t_out))
-            th2.append(float(theta))
-            omg2.append(float(omega))
-            torq2.append(float(torque))
+    data = np.loadtxt("output_data.txt")
 
     ax1.clear()
     ax2.clear()
@@ -59,7 +21,7 @@ def animate(i):
     ax5.clear()
     ax6.clear()
 
-    current_time = t1[len(t1) - 1]
+    current_time = data[-1][0]
 
     ax1.set_title("Position: theta_5")
     ax2.set_title("Velocity: omega_5")
@@ -83,13 +45,15 @@ def animate(i):
     ax5.set_ylim(-3, 3)
     ax6.set_ylim(-50, 50)
 
-    ax1.plot(t1, p1)
-    ax1.plot(t1, th1)
+    ax1.plot(data[:, 0], 180 / 3.14 * data[:, 1])
+    ax1.plot(data[:, 0], 180 / 3.14 * data[:, 2])
     
-    ax2.plot(t1, v1)    
-    ax2.plot(t1, omg1)
-    # ax3.plot(t1, to1)
-    # ax3.plot(t1, torq1)
+    ax2.plot(data[:, 0], data[:, 3])
+    ax2.plot(data[:, 0], data[:, 4])
+    
+    ax3.plot(data[:, 0], data[:, 5])
+    ax3.plot(data[:, 0], data[:, 6])
+
     
     # ax4.plot(t2, [57.1 * i for i in p2])
     # ax4.plot(t2, th2)

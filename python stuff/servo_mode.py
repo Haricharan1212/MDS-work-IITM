@@ -140,8 +140,6 @@ def comm_can_set_pos(controller_id, pos):
     arr = (int(pos * 1000000) & 0xFFFFFFFF).to_bytes(4, 'big')
     comm_can_transmit_eid((controller_id | (CAN_PACKET_SET_POS << 8)), arr, send_index)
  
-comm_can_set_pos(0x00, 0)
-
 # void comm_can_set_origin(uint8_t controller_id, uint8_t set_origin_mode) {
 # comm_can_transmit_eid(controller_id |
 # ((uint32_t) CAN_PACKET_SET_ORIGIN_HERE << 8), buffer, send_index);
@@ -170,3 +168,5 @@ def comm_can_set_pos_spd(controller_id, pos, spd, RPA):
     arr = (int(pos * 1000000) & 0xFFFFFFFF).to_bytes(4, 'big') + (int(spd) & 0xFFFF).to_bytes(2, 'big') + (int(RPA) & 0xFFFF).to_bytes(2, 'big')
     comm_can_transmit_eid((controller_id | (CAN_PACKET_SET_POS_SPD << 8)), arr[::-1], send_index)
     return arr
+
+comm_can_set_rpm(0x00, 2000000)

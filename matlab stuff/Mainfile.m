@@ -1,0 +1,1 @@
+rxCh = canChannel("Kvaser", "Leaf Light v2 1", 1);

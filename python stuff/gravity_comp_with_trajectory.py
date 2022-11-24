@@ -14,7 +14,7 @@ id_2 = 2
 
 # Delta is how much the vertical is offset from the actual zero of the motor
 delta_1 = 0
-delta_2 = -3.14 - 0.5
+delta_2 = 0
 
 #Makes motor come to centre position
 
@@ -36,9 +36,10 @@ while True:
     p_out, v_out, t_out = tmotorCAN.unpack_reply(output_msg)
     
     #Note: without load: A = 10, with load: A = 18
-    A = 18
+    A = 10
     
     t_in = A * np.sin(p_in)
+    
     file = open("output_data.txt", "a")
     file.writelines([str(current_time),"  ", str(t_in),"  ", str(t_out), "\n"])
     file.close()
