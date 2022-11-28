@@ -8,6 +8,14 @@ import trajectory
 
 ch0 = channel_config.start_channel()
 
+frame = canlib.Frame(id_= 1, data=tmotorCAN.pack_cmd(0, 0, 0), flags=clb.MessageFlag.STD)        
+ch0.write(frame)
+time.sleep(0.01)
+output_msg = ch0.read().data
+p_out, v_out, t_out = tmotorCAN.unpack_reply(output_msg)
+print(p_out, v_out, t_out)
+"""
+
 id_1 = 1
 id_2 = 2
 
@@ -78,3 +86,4 @@ for f in range(1000):
     time.sleep(0.01)
 
 channel_config.tearDownChannel(ch0)
+"""

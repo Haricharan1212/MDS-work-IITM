@@ -131,10 +131,9 @@ def unpack_reply(buf):
     p_int = (buf[1] << 8) | buf[2]
     v_int = (buf[3] << 4) | (buf[4] >> 4)
     i_int = ((buf[4] & 0xF) << 8) | buf[5]
-    
+
     p_out = uint_to_float(p_int, P_MIN, P_MAX, 16)
     v_out = uint_to_float(v_int, V_MIN, V_MAX, 12)
     t_out = uint_to_float(i_int, -T_MAX, T_MAX, 12)
 
     return p_out, v_out, t_out
-
