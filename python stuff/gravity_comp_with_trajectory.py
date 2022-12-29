@@ -26,15 +26,12 @@ file.close()
 
 init_time = time.time()
 
+motor = tmotorCAN.tmotor(1, 'ak80-64')
+
 while True:
     current_time = time.time() - init_time
-    frame = canlib.Frame(id_= id_1, data=tmotorCAN.pack_cmd(delta_1 + trajectory.theta_5(1.7, current_time), trajectory.omega_5(1.7, current_time), t_in), flags=clb.MessageFlag.STD)
-    ch0.write(frame)
-    time.sleep(0.01)
-
-    output_msg = ch0.read().data
-    p_out, v_out, t_out = tmotorCAN.unpack_reply(output_msg)
-    
+    p_out, v_out, t_out = motor.attain(delta_1 + trajectory.theta_5(1.7, current_time), trajectory.omega_5(1.7, current_time), t_in, 50, 5)
+        
     #Note: without load: A = 10, with load: A = 18
     A = 10
     

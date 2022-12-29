@@ -26,24 +26,18 @@ file.close()
 
 init_time = time.time()
 
-#if p_in - p_out > 10, switch off motor
-
-frame = canlib.Frame(id_= id_1, data=tmotorCAN.pack_cmd(delta_1 + p_in, 0, t_in), flags=clb.MessageFlag.STD)
-ch0.write(frame)
-time.sleep(0.01)
+motor = tmotorCAN.tmotor(1, 'ak80-64')
 
 while True:
+
     current_time = time.time() - init_time
-    frame = canlib.Frame(id_= id_1, data=tmotorCAN.pack_cmd(delta_1 + p_in, 0, t_in), flags=clb.MessageFlag.STD)
-    ch0.write(frame)
-    time.sleep(0.01)
-
-    output_msg = ch0.read().data
-    p_out, v_out, t_out = tmotorCAN.unpack_reply(output_msg)
-
-    t_in = + 10 * np.sin(p_out)
-    p_in = p_out
+    p_out, v_out, t_out = motor.attain(delta_1 + p_in, 0, t_in, 50, 5)
+        
+    #Note: without load: A = 10, with load: A = 18
+    A = 10
     
+    t_in = A * np.sin(p_in)
+    p_in = p_out    
     file = open("output_data.txt", "a")
     file.writelines([str(current_time),"  ", str(t_in),"  ", str(t_out), "\n"])
     file.close()
