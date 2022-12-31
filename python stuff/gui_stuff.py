@@ -4,9 +4,11 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import time
+import numpy as np
+from scipy import interpolate
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-# from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib import pyplot as plt
 
 class Heading(QLabel):
@@ -17,6 +19,36 @@ class Heading(QLabel):
         font.setBold(True)
         font.setPointSize(23)
         self.setFont(font)
+
+class Plot(QDialog):
+    
+    def __init__(self):
+        super().__init__()
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)  
+        self.toolbar = NavigationToolbar(self.canvas, self)  
+        layout = QVBoxLayout()
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.canvas)  
+        self.setLayout(layout)
+
+    def plot(self):          
+
+        self.figure.clear()
+
+        ax1 = self.figure.add_subplot(111)  
+        x = self.data1.T[0]
+        y = self.data1.T[1]
+
+        x_new = np.linspace(min(x), max(x), 50)
+        bspline = interpolate.make_interp_spline(x, y)
+        y_new = bspline(x_new)
+
+
+        ax1.plot(x_new, y_new, '*-')  
+        ax1.set_title("Left Hip")
+
+        self.canvas.draw()
 
 class PlotScreen(QDialog):
     
@@ -125,13 +157,13 @@ class InitialScreenLeftPanel(QWidget):
 
         self.button1 = QRadioButton("Position Control")        
         self.button2 = QRadioButton("Gravity Compensation")
-        self.button3 = QRadioButton("Position Control \nwith Gravity Compensation")
+        # self.button3 = QRadioButton("Position Control \nwith Gravity Compensation")
 
         layout = QVBoxLayout()
         layout.addWidget(self.heading)
         layout.addWidget(self.button1)
         layout.addWidget(self.button2)
-        layout.addWidget(self.button3)
+        # layout.addWidget(self.button3)
         layout.addStretch(1)
         
         self.setLayout(layout)
@@ -271,25 +303,90 @@ class GravityCompensationScreen(QWidget):
 
         self.setLayout(layout)
 
+class TrajectoryInput(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.label1 = QLabel("x1")
+        self.input1 = QLineEdit()        
+        self.label2 = QLabel("y1")
+        self.input2 = QLineEdit()        
+        self.label3 = QLabel("x2")
+        self.input3 = QLineEdit()        
+        self.label4 = QLabel("y2")
+        self.input4 = QLineEdit()        
+        self.label5 = QLabel("x3")
+        self.input5 = QLineEdit()        
+        self.label6 = QLabel("y3")
+        self.input6 = QLineEdit()        
+        self.label7 = QLabel("x4")
+        self.input7 = QLineEdit()        
+        self.label8 = QLabel("y4")
+        self.input8 = QLineEdit()        
+        self.label9 = QLabel("x5")
+        self.input9 = QLineEdit()        
+        self.label10 = QLabel("y5")
+        self.input10 = QLineEdit()        
+
+        layout = QGridLayout()
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 0)
+        layout.setColumnStretch(2, 1)
+        layout.setColumnStretch(3, 0)
+
+        layout.addWidget(self.label1, 0, 0)
+        layout.addWidget(self.input1, 0, 1)
+        layout.addWidget(self.label2, 0, 2)
+        layout.addWidget(self.input2, 0, 3)
+        layout.addWidget(self.label3, 1, 0)
+        layout.addWidget(self.input3, 1, 1)
+        layout.addWidget(self.label4, 1, 2)
+        layout.addWidget(self.input4, 1, 3)
+        layout.addWidget(self.label5, 2, 0)
+        layout.addWidget(self.input5, 2, 1)
+        layout.addWidget(self.label6, 2, 2)
+        layout.addWidget(self.input6, 2, 3)
+        layout.addWidget(self.label7, 3, 0)
+        layout.addWidget(self.input7, 3, 1)
+        layout.addWidget(self.label8, 3, 2)
+        layout.addWidget(self.input8, 3, 3)
+        layout.addWidget(self.label9, 4, 0)
+        layout.addWidget(self.input9, 4, 1)
+        layout.addWidget(self.label10, 4, 2)
+        layout.addWidget(self.input10, 4, 3)
+    
+        self.setLayout(layout)
+
 class PositionControlScreenLeftPanel(QWidget):
     def __init__(self):
         super().__init__()
-    
+
+        heading = Heading("Points in trajectory")
+        
+        self.trajectory_input = TrajectoryInput()
+        self.button = QPushButton("Update")
+                
+        layout = QVBoxLayout()
+
+        layout.addWidget(heading)
+        layout.addWidget(self.trajectory_input)
+        layout.addWidget(self.button)
+        layout.addStretch(1)
+
+        self.setLayout(layout)
+        
 
 class PositionControlScreenRightPanel(QWidget):
     def __init__(self):
         super().__init__()
     
-        self.heading = Heading("Instructions for Usage")
-        self.list = QListWidget()
-        self.list.addItems(["1. Instruction1", "2. Instruction2", "3. Instruction3"])
-        self.list.setWordWrap(True)
-
-        self.button = QPushButton("Back")
-
+        self.heading = Heading("Plotting Data")
+        self.graph = Plot()        
+        self.button = QPushButton("Back")                
+        
         layout = QVBoxLayout()
         layout.addWidget(self.heading)
-        layout.addWidget(self.list)
+        layout.addWidget(self.graph)
         layout.addStretch(1)
         layout.addWidget(self.button)
         self.setLayout(layout)        
@@ -308,41 +405,76 @@ class PositionContolScreen(QWidget):
 
         self.setLayout(layout)
 
-class PositionContolWithGravityScreenLeftPanel(QWidget):
+class PositionControlFinalScreenLeftPanel(QWidget):
     def __init__(self):
-        super().__init__()    
+        super().__init__() 
+           
+        self.button0 = QPushButton("Start Motor")
+        self.button1 = QPushButton("Start Therapy")
+        self.button2 = QPushButton("Stop Therapy")
+        self.button3 = QPushButton("Go to Origin")
 
-class PositionContolWithGravityScreenRightPanel(QWidget):
+        layout = QVBoxLayout()
+
+        layout.addWidget(self.button0)
+        layout.addWidget(self.button1)
+        layout.addWidget(self.button2)
+        layout.addWidget(self.button3)
+
+        self.setLayout(layout)
+
+class PositionControlFinalScreenRightPanel(QWidget):
     def __init__(self):
         super().__init__()
     
-        self.heading = Heading("Instructions for Usage")
-        self.list = QListWidget()
-        self.list.addItems(["1. Instruction1", "2. Instruction2", "3. Instruction3"])
-        self.list.setWordWrap(True)
-        self.button = QPushButton("Back")
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.heading)
-        layout.addWidget(self.list)
-        layout.addStretch(1)
-        layout.addWidget(self.button)
-        self.setLayout(layout)        
-
-
-class PositionContolWithGravityScreen(QWidget):
-
+class PositionControlFinalScreen(QWidget):
+    
     def __init__(self):
         super().__init__()
-
-        self.left_panel = PositionContolWithGravityScreenLeftPanel()        
-        self.right_panel = PositionContolWithGravityScreenRightPanel()
-
+        
+        self.right_panel = PositionControlFinalScreenRightPanel()
+        self.left_panel = PositionControlFinalScreenLeftPanel()
         layout = QHBoxLayout()
         layout.addWidget(self.left_panel)
         layout.addWidget(self.right_panel)
-
         self.setLayout(layout)
+    
+
+# class PositionContolWithGravityScreenLeftPanel(QWidget):
+#     def __init__(self):
+#         super().__init__()    
+
+# class PositionContolWithGravityScreenRightPanel(QWidget):
+#     def __init__(self):
+#         super().__init__()
+    
+#         self.heading = Heading("Instructions for Usage")
+#         self.list = QListWidget()
+#         self.list.addItems(["1. Instruction1", "2. Instruction2", "3. Instruction3"])
+#         self.list.setWordWrap(True)
+#         self.button = QPushButton("Back")
+
+#         layout = QVBoxLayout()
+#         layout.addWidget(self.heading)
+#         layout.addWidget(self.list)
+#         layout.addStretch(1)
+#         layout.addWidget(self.button)
+#         self.setLayout(layout)        
+
+
+# class PositionContolWithGravityScreen(QWidget):
+
+#     def __init__(self):
+#         super().__init__()
+
+#         self.left_panel = PositionContolWithGravityScreenLeftPanel()        
+#         self.right_panel = PositionContolWithGravityScreenRightPanel()
+
+#         layout = QHBoxLayout()
+#         layout.addWidget(self.left_panel)
+#         layout.addWidget(self.right_panel)
+
+#         self.setLayout(layout)
 
 class PatientDetailsMessage(QMessageBox):
     def __init__(self):
@@ -386,6 +518,7 @@ class MainWindow(QMainWindow):
 
         self.position_control_screen = PositionContolScreen()
         self.position_control_screen.right_panel.button.clicked.connect(self.button_press_bwd)
+        self.position_control_screen.left_panel.button.clicked.connect(self.button_press_update)
 
         self.gravity_compensation_screen = GravityCompensationScreen()
         self.gravity_compensation_screen.right_panel.button.clicked.connect(self.button_press_bwd)
@@ -393,20 +526,35 @@ class MainWindow(QMainWindow):
         self.gravity_compensation_screen.left_panel.button2.clicked.connect(self.gravity_compensation_stop)
         self.gravity_compensation_screen.left_panel.input_panel.button.clicked.connect(self.input_panel_button_pressed)
 
-        self.position_control_with_gravity_screen = PositionContolWithGravityScreen()
-        self.position_control_with_gravity_screen.right_panel.button.clicked.connect(self.button_press_bwd)
+        # self.position_control_with_gravity_screen = PositionContolWithGravityScreen()
+        # self.position_control_with_gravity_screen.right_panel.button.clicked.connect(self.button_press_bwd)
 
         self.motor_interact = MotorInteract()        
 
         self.screens.addWidget(self.initial_screen)
         self.screens.addWidget(self.position_control_screen)
         self.screens.addWidget(self.gravity_compensation_screen)
-        self.screens.addWidget(self.position_control_with_gravity_screen)
+        # self.screens.addWidget(self.position_control_with_gravity_screen)
         self.screens.setCurrentIndex(0)
 
         self.setCentralWidget(self.screens)
 
         self.show()
+
+    def button_press_update(self):
+
+        data = []
+
+        for i in range(0, 5):
+            var1 = float(eval(f"self.position_control_screen.left_panel.trajectory_input.input{2 * i + 1}.text()"))
+            var2 = float(eval(f"self.position_control_screen.left_panel.trajectory_input.input{2 * i + 2}.text()"))
+            data.append([var1, var2])    
+        
+        data = np.array(data)
+
+        self.position_control_screen.right_panel.graph.data1 = data
+        self.position_control_screen.right_panel.graph.plot()
+
 
     def input_panel_button_pressed(self):
         self.motor_interact.minimum_position = self.gravity_compensation_screen.left_panel.input_panel.input1.text()
@@ -462,8 +610,6 @@ class MainWindow(QMainWindow):
         self.patient_weight = self.initial_screen.middle_panel.line1.text()
         self.patient_leg_length = self.initial_screen.middle_panel.line2.text()
         self.gravity_compensation_screen.left_panel.label.setText(f"Patient Weight: {self.patient_weight} kg\nPatient Height: {self.patient_leg_length} m")
-
-
 
 app = QApplication(sys.argv)
 
