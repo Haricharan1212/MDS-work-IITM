@@ -1,13 +1,10 @@
 import time
 import canlib
 import canlib.canlib as clb
-import tmotorCAN
 import numpy as np
 import channel_config
-import trajectory
 
 class tmotor():
-
     def __init__(self, id, type):
         self.channel = channel_config.start_channel()
         self.id = id
@@ -39,9 +36,8 @@ class tmotor():
             self.KD_MAX = 5.0
             self.T_MIN = -65.0
             self.T_MAX = 65.0
-
         else:
-            raise (ValueError)
+            raise ValueError
 
     def attain(self, p_in, v_in, t_in, kp, kd):
 
@@ -56,7 +52,6 @@ class tmotor():
         except ZeroDivisionError:
             return None, None, None
 
-#Helper functions
     def constrain(self, value, min_value, max_value):
         """Function which constrains the given value between min value and max value"""
         if (value < min_value):
@@ -88,7 +83,6 @@ class tmotor():
             pgg = x_int * span / 65535.0 + offset
         return pgg
 
-    #Data creation functions
     def enter_motor_mode(self):
         """Function which creates array to turn the motor ON in MIT motor mode"""
         

@@ -11,6 +11,18 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib import pyplot as plt
 
+MINPOSKNEE = -30
+MAXPOSKNEE = 30
+MINPOSHIP = -30
+MAXPOSHIP = 30
+MAXVEL = -15
+MAXPOS = 15
+
+TIMES = [1, 2, 3, 4, 5]
+
+HIP_VALUES = [30, 15, 0, -15, 5]
+KNEE_VALUES = [30, 10, 0, -15, 5]
+    
 class Heading(QLabel):
     def __init__(self, text):
         super().__init__()
@@ -32,21 +44,42 @@ class Plot(QDialog):
         layout.addWidget(self.canvas)  
         self.setLayout(layout)
 
+        self.data1 = None
+        self.data2 = None
+
     def plot(self):          
+
+        x = TIMES
 
         self.figure.clear()
 
-        ax1 = self.figure.add_subplot(111)  
-        x = self.data1.T[0]
-        y = self.data1.T[1]
+        ax1 = self.figure.add_subplot(211)  
+        y = self.data1
 
         x_new = np.linspace(min(x), max(x), 50)
         bspline = interpolate.make_interp_spline(x, y)
         y_new = bspline(x_new)
 
+        ax1.axhline(y=0, color='k')
+        ax1.axvline(x=0, color='k')
 
-        ax1.plot(x_new, y_new, '*-')  
-        ax1.set_title("Left Hip")
+        ax1.plot(x_new, y_new, '-')
+        ax1.plot(x, y, 's')  
+        ax1.set_title("Hip")
+
+        ax2 = self.figure.add_subplot(212)  
+        y = self.data2
+
+        x_new = np.linspace(min(x), max(x), 50)
+        bspline = interpolate.make_interp_spline(x, y)
+        y_new = bspline(x_new)
+
+        ax2.axhline(y=0, color='k')
+        ax2.axvline(x=0, color='k')
+
+        ax2.plot(x_new, y_new, '-')
+        ax2.plot(x, y, 's')  
+        ax2.set_title("Knee")
 
         self.canvas.draw()
 
@@ -98,35 +131,54 @@ class MotorInteract(QObject):
         super().__init__()
         self.mode = None
         self.on = False
-        self.index = 0
+        self.index = 0 # For debugging
+        self.to_origin = False
 
-        self.mode = None
-        self.minimum_position = None
-        self.maximum_position = None
-        self.minimum_velocity = None
-        self.maximum_velocity = None
-        
+        self.minimum_position_hip = MINPOSHIP
+        self.maximum_position_hip = MAXPOSHIP
+        self.minimum_position_knee = MINPOSKNEE
+        self.maximum_position_knee = MAXPOSKNEE
+                        
+        self.left_hip = True
+        self.left_knee = True
+        self.right_hip = True
+        self.right_knee = True
+                
     def run_motor(self):        
         while True:
-            print(self.index)
-            time.sleep(1)
-            self.index += 1
-            if not self.on:
-                return
-  
+            time.sleep(0.01)
+
+            if (self.to_origin):
+                 # Do something
+                 self.to_origin = False                       
+            else:
+                if (self.on):
+                    if (self.mode == 1):
+                        print(self.index)
+                        time.sleep(1)
+                        self.index += 1
+                    elif (self.mode == 2):
+                        print(self.index)
+                        time.sleep(0.1)
+                        self.index += 1                
+
   
 class InputPanel(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.label1 = QLabel("Minimum position")
+        self.label1 = QLabel("Minimum position (hip)")
         self.input1 = QLineEdit()        
-        self.label2 = QLabel("Maximum position")
+        self.input1.setText(str(MINPOSHIP))
+        self.label2 = QLabel("Maximum position (hip)")
         self.input2 = QLineEdit()        
-        self.label3 = QLabel("Minimum Velocity")
+        self.input2.setText(str(MAXPOSHIP))
+        self.label3 = QLabel("Minimum Velocity (knee)")
         self.input3 = QLineEdit()        
-        self.label4 = QLabel("Maximum Velocity")
+        self.input3.setText(str(MINPOSKNEE))
+        self.label4 = QLabel("Maximum Velocity (knee)")
         self.input4 = QLineEdit()        
+        self.input4.setText(str(MAXPOSKNEE))
         
         self.button = QPushButton("Save Data")
         
@@ -153,17 +205,31 @@ class InitialScreenLeftPanel(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.heading = Heading("Modes Available")
+        self.heading1 = Heading("Modes Available")
 
-        self.button1 = QRadioButton("Position Control")        
-        self.button2 = QRadioButton("Gravity Compensation")
-        # self.button3 = QRadioButton("Position Control \nwith Gravity Compensation")
+        self.button1 = QRadioButton("Automatic")        
+        self.button2 = QRadioButton("Physiotherapist Guided")
 
+        self.heading2 = Heading("Motors activated")
+        self.checkbox1 = QCheckBox("Left Hip Motor")
+        self.checkbox2 = QCheckBox("Left Knee Motor")
+        self.checkbox3 = QCheckBox("Right Hip Motor")
+        self.checkbox4 = QCheckBox("Right Knee Motor")
+        
+        self.checkbox1.setChecked(True)
+        self.checkbox2.setChecked(True)
+        self.checkbox3.setChecked(True)
+        self.checkbox4.setChecked(True)
+        
         layout = QVBoxLayout()
-        layout.addWidget(self.heading)
+        layout.addWidget(self.heading1)
         layout.addWidget(self.button1)
         layout.addWidget(self.button2)
-        # layout.addWidget(self.button3)
+        layout.addWidget(self.heading2)
+        layout.addWidget(self.checkbox1)
+        layout.addWidget(self.checkbox2)
+        layout.addWidget(self.checkbox3)
+        layout.addWidget(self.checkbox4)
         layout.addStretch(1)
         
         self.setLayout(layout)
@@ -178,7 +244,7 @@ class InitialScreenMiddlePanel(QWidget):
 
         self.label1 = QLabel("Patient Weight (in kilograms)")
         self.line1 = QLineEdit()        
-        self.label2 = QLabel("Patient Leg Length (in metre)")
+        self.label2 = QLabel("Patient Height (in metre)")
         self.line2 = QLineEdit()
         
         for line in self.line1, self.line2:
@@ -240,6 +306,7 @@ class GravityCompensationScreenLeftPanel(QWidget):
 
         self.state = False
 
+        self.heading = Heading("Maximum and Minimum Values")
         self.input_panel = InputPanel()
 
         self.label = QLabel("")
@@ -249,10 +316,13 @@ class GravityCompensationScreenLeftPanel(QWidget):
         self.button2 = QPushButton("Stop Therapy")
         self.button3 = QPushButton("Go to Origin")
 
-        self.button1.setDisabled(self.state)
-        self.button2.setDisabled(not self.state)
+        self.button0.setDisabled(False)
+        self.button1.setDisabled(True)
+        self.button2.setDisabled(True)
+        self.button3.setDisabled(True)
 
         layout = QVBoxLayout()
+        layout.addWidget(self.heading)
         layout.addWidget(self.input_panel)
         layout.addWidget(self.label)
         layout.addWidget(self.button0)
@@ -260,15 +330,7 @@ class GravityCompensationScreenLeftPanel(QWidget):
         layout.addWidget(self.button2)
         layout.addWidget(self.button3)
         layout.addStretch(1)
-        self.setLayout(layout)        
-
-        self.workerThread = QThread()
-        self.worker = MotorInteract()
-        self.worker.moveToThread(self.workerThread)
-        self.workerThread.started.connect(self.worker.run_motor)
-        # self.workerThread.finished.connect()
-        self.worker.on = self.state
-    
+        self.setLayout(layout)            
 
 class GravityCompensationScreenRightPanel(QWidget):
     def __init__(self):
@@ -307,53 +369,36 @@ class TrajectoryInput(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.label1 = QLabel("x1")
-        self.input1 = QLineEdit()        
-        self.label2 = QLabel("y1")
-        self.input2 = QLineEdit()        
-        self.label3 = QLabel("x2")
-        self.input3 = QLineEdit()        
-        self.label4 = QLabel("y2")
-        self.input4 = QLineEdit()        
-        self.label5 = QLabel("x3")
-        self.input5 = QLineEdit()        
-        self.label6 = QLabel("y3")
-        self.input6 = QLineEdit()        
-        self.label7 = QLabel("x4")
-        self.input7 = QLineEdit()        
-        self.label8 = QLabel("y4")
-        self.input8 = QLineEdit()        
-        self.label9 = QLabel("x5")
-        self.input9 = QLineEdit()        
-        self.label10 = QLabel("y5")
-        self.input10 = QLineEdit()        
-
         layout = QGridLayout()
         layout.setColumnStretch(0, 1)
         layout.setColumnStretch(1, 0)
         layout.setColumnStretch(2, 1)
         layout.setColumnStretch(3, 0)
 
-        layout.addWidget(self.label1, 0, 0)
-        layout.addWidget(self.input1, 0, 1)
-        layout.addWidget(self.label2, 0, 2)
-        layout.addWidget(self.input2, 0, 3)
-        layout.addWidget(self.label3, 1, 0)
-        layout.addWidget(self.input3, 1, 1)
-        layout.addWidget(self.label4, 1, 2)
-        layout.addWidget(self.input4, 1, 3)
-        layout.addWidget(self.label5, 2, 0)
-        layout.addWidget(self.input5, 2, 1)
-        layout.addWidget(self.label6, 2, 2)
-        layout.addWidget(self.input6, 2, 3)
-        layout.addWidget(self.label7, 3, 0)
-        layout.addWidget(self.input7, 3, 1)
-        layout.addWidget(self.label8, 3, 2)
-        layout.addWidget(self.input8, 3, 3)
-        layout.addWidget(self.label9, 4, 0)
-        layout.addWidget(self.input9, 4, 1)
-        layout.addWidget(self.label10, 4, 2)
-        layout.addWidget(self.input10, 4, 3)
+        self.texts1 = []
+        self.texts2 = []
+        self.texts3 = []
+        self.inputs1 = []
+        self.inputs2 = []
+        
+        for i in range(1, 6):
+
+            self.texts1.append(QLabel(f"t {TIMES[i - 1]}"))
+            self.texts2.append(QLabel(f"hip angle {i}"))
+            self.inputs1.append(QLineEdit())        
+            self.texts3.append(QLabel(f"knee angle {i}"))
+            self.inputs2.append(QLineEdit())        
+
+            layout.addWidget(self.texts1[-1], i -  1, 0)
+            layout.addWidget(self.texts2[-1], i -  1, 1)
+            layout.addWidget(self.inputs1[-1], i -  1, 2)
+            layout.addWidget(self.texts3[-1], i -  1, 3)
+            layout.addWidget(self.inputs2[-1], i -  1, 4)
+    
+        
+        for i in range(0, 5):
+            self.inputs1[i].setText(str(HIP_VALUES[i]))
+            self.inputs2[i].setText(str(KNEE_VALUES[i]))
     
         self.setLayout(layout)
 
@@ -382,13 +427,17 @@ class PositionControlScreenRightPanel(QWidget):
     
         self.heading = Heading("Plotting Data")
         self.graph = Plot()        
-        self.button = QPushButton("Back")                
+        self.button1 = QPushButton("Continue")
+        self.button2 = QPushButton("Back")                
+        
+        self.button1.setDisabled(True)
         
         layout = QVBoxLayout()
         layout.addWidget(self.heading)
         layout.addWidget(self.graph)
         layout.addStretch(1)
-        layout.addWidget(self.button)
+        layout.addWidget(self.button1)
+        layout.addWidget(self.button2)
         self.setLayout(layout)        
 
 
@@ -408,7 +457,12 @@ class PositionContolScreen(QWidget):
 class PositionControlFinalScreenLeftPanel(QWidget):
     def __init__(self):
         super().__init__() 
-           
+
+        self.heading = Heading("Maximum and Minimum Values")
+
+        self.input_panel = InputPanel()           
+        self.label = QLabel("")
+
         self.button0 = QPushButton("Start Motor")
         self.button1 = QPushButton("Start Therapy")
         self.button2 = QPushButton("Stop Therapy")
@@ -416,16 +470,43 @@ class PositionControlFinalScreenLeftPanel(QWidget):
 
         layout = QVBoxLayout()
 
+        self.button0.setDisabled(False)
+        self.button1.setDisabled(True)
+        self.button2.setDisabled(True)
+        self.button3.setDisabled(True)
+
+        layout.addWidget(self.heading)
+        layout.addWidget(self.input_panel)
         layout.addWidget(self.button0)
         layout.addWidget(self.button1)
         layout.addWidget(self.button2)
         layout.addWidget(self.button3)
+        layout.addStretch(1)
 
         self.setLayout(layout)
 
 class PositionControlFinalScreenRightPanel(QWidget):
     def __init__(self):
         super().__init__()
+        
+        self.heading = Heading("Plotting Data")
+        
+        self.graph = PlotScreen()
+        self.button = QPushButton("Back")                
+        self.label = QLabel("Speed")
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setMinimum(1)
+        self.slider.setMaximum(10)
+        
+        layout = QVBoxLayout()
+        layout.addWidget(self.heading)
+        layout.addWidget(self.graph)
+        layout.addWidget(self.label)
+        layout.addWidget(self.slider)
+        layout.addStretch(1)
+        layout.addWidget(self.button)
+        self.setLayout(layout)        
+
     
 class PositionControlFinalScreen(QWidget):
     
@@ -500,7 +581,7 @@ class MainWindow(QMainWindow):
 
         super().__init__()      
 
-        self.patient_leg_length = 0
+        self.patient_height = 0
         self.patient_weight = 0
         
         font = self.font()
@@ -517,102 +598,196 @@ class MainWindow(QMainWindow):
         self.initial_screen.right_panel.button.clicked.connect(self.button_press_fwd)
 
         self.position_control_screen = PositionContolScreen()
-        self.position_control_screen.right_panel.button.clicked.connect(self.button_press_bwd)
+        self.position_control_screen.right_panel.button1.clicked.connect(self.button_press_continue)
+        self.position_control_screen.right_panel.button2.clicked.connect(self.button_press_bwd)
         self.position_control_screen.left_panel.button.clicked.connect(self.button_press_update)
+
 
         self.gravity_compensation_screen = GravityCompensationScreen()
         self.gravity_compensation_screen.right_panel.button.clicked.connect(self.button_press_bwd)
+        self.gravity_compensation_screen.left_panel.button0.clicked.connect(self.gravity_compensation_start_motor)
         self.gravity_compensation_screen.left_panel.button1.clicked.connect(self.gravity_compensation_start_therapy)
         self.gravity_compensation_screen.left_panel.button2.clicked.connect(self.gravity_compensation_stop)
+        self.gravity_compensation_screen.left_panel.button3.clicked.connect(self.gravity_compensation_go_to_origin)
         self.gravity_compensation_screen.left_panel.input_panel.button.clicked.connect(self.input_panel_button_pressed)
+
+        self.position_control_final_screen = PositionControlFinalScreen()
+        self.position_control_final_screen.right_panel.button.clicked.connect(self.button_press_bwd)
+        self.position_control_final_screen.left_panel.button0.clicked.connect(self.position_control_start_motor)
+        self.position_control_final_screen.left_panel.button1.clicked.connect(self.position_control_start_therapy)
+        self.position_control_final_screen.left_panel.button2.clicked.connect(self.position_control_stop)
+        self.position_control_final_screen.left_panel.button3.clicked.connect(self.position_control_go_to_origin)
+        self.position_control_final_screen.left_panel.input_panel.button.clicked.connect(self.input_panel_button_pressed)
 
         # self.position_control_with_gravity_screen = PositionContolWithGravityScreen()
         # self.position_control_with_gravity_screen.right_panel.button.clicked.connect(self.button_press_bwd)
 
         self.motor_interact = MotorInteract()        
+        self.workerThread = QThread()
+        self.motor_interact.moveToThread(self.workerThread)
+        self.workerThread.started.connect(self.motor_interact.run_motor)
+        # self.workerThread.finished.connect()
 
         self.screens.addWidget(self.initial_screen)
         self.screens.addWidget(self.position_control_screen)
         self.screens.addWidget(self.gravity_compensation_screen)
+        self.screens.addWidget(self.position_control_final_screen)
         # self.screens.addWidget(self.position_control_with_gravity_screen)
-        self.screens.setCurrentIndex(0)
-
+        
+        self.screen_mode = 0
+        self.screens.setCurrentIndex(self.screen_mode)
         self.setCentralWidget(self.screens)
-
         self.show()
+
+    def button_press_continue(self):
+        self.screen_mode = 3
+        self.screens.setCurrentIndex(self.screen_mode)
 
     def button_press_update(self):
 
-        data = []
+        data1 = []
+        data2 = []
 
         for i in range(0, 5):
-            var1 = float(eval(f"self.position_control_screen.left_panel.trajectory_input.input{2 * i + 1}.text()"))
-            var2 = float(eval(f"self.position_control_screen.left_panel.trajectory_input.input{2 * i + 2}.text()"))
-            data.append([var1, var2])    
+            data1.append(int(self.position_control_screen.left_panel.trajectory_input.inputs1[i].text()))
+            data2.append(int(self.position_control_screen.left_panel.trajectory_input.inputs2[i].text()))
         
-        data = np.array(data)
+        data1 = np.array(data1)
+        data2 = np.array(data2)
 
-        self.position_control_screen.right_panel.graph.data1 = data
+        self.position_control_screen.right_panel.graph.data1 = data1
+        self.position_control_screen.right_panel.graph.data2 = data2
         self.position_control_screen.right_panel.graph.plot()
 
+        self.position_control_screen.right_panel.button1.setDisabled(False)
 
     def input_panel_button_pressed(self):
-        self.motor_interact.minimum_position = self.gravity_compensation_screen.left_panel.input_panel.input1.text()
-        self.motor_interact.maximum_position = self.gravity_compensation_screen.left_panel.input_panel.input2.text()
-        self.motor_interact.minimum_velocity = self.gravity_compensation_screen.left_panel.input_panel.input3.text()
-        self.motor_interact.maximum_velocity = self.gravity_compensation_screen.left_panel.input_panel.input4.text()
+        self.motor_interact.minimum_position_hip = self.gravity_compensation_screen.left_panel.input_panel.input1.text()
+        self.motor_interact.maximum_position_hip = self.gravity_compensation_screen.left_panel.input_panel.input2.text()
+        self.motor_interact.minimum_position_knee = self.gravity_compensation_screen.left_panel.input_panel.input3.text()
+        self.motor_interact.maximum_position_knee = self.gravity_compensation_screen.left_panel.input_panel.input4.text()
+
+    def position_control_start_motor(self):
+
+        self.motor_interact.on = False
+        self.workerThread.start()
+
+        self.position_control_final_screen.left_panel.button0.setDisabled(True)
+        self.position_control_final_screen.left_panel.button1.setDisabled(False)
+        self.position_control_final_screen.left_panel.button2.setDisabled(True)
+        self.position_control_final_screen.left_panel.button3.setDisabled(False)
+
+    def position_control_start_therapy(self):
+
+        self.motor_interact.on = True
+        self.position_control_final_screen.right_panel.graph.plot()
+        
+        self.position_control_final_screen.left_panel.button0.setDisabled(True)
+        self.position_control_final_screen.left_panel.button1.setDisabled(True)
+        self.position_control_final_screen.left_panel.button2.setDisabled(False)
+        self.position_control_final_screen.left_panel.button3.setDisabled(True)
+        self.position_control_final_screen.right_panel.button.setDisabled(True)
+        self.position_control_final_screen.right_panel.slider.setDisabled(True)
+
+        self.position_control_final_screen.left_panel.input_panel.button.setDisabled(True)
+
+    def position_control_stop(self):
+
+        self.position_control_final_screen.left_panel.button0.setDisabled(True)
+        self.position_control_final_screen.left_panel.button1.setDisabled(False)
+        self.position_control_final_screen.left_panel.button2.setDisabled(True)
+        self.position_control_final_screen.left_panel.button3.setDisabled(False)
+        self.position_control_final_screen.right_panel.button.setDisabled(False)
+        self.position_control_final_screen.left_panel.input_panel.button.setDisabled(False)
+        self.position_control_final_screen.right_panel.slider.setDisabled(False)
+
+        self.motor_interact.on = False
+        self.workerThread.exit(0)
+
+    def position_control_go_to_origin(self):
+
+        self.motor_interact.to_origin = True
+        return
+
+    def gravity_compensation_start_motor(self):
+
+        self.motor_interact.on = False
+        self.workerThread.start()
+
+        self.gravity_compensation_screen.left_panel.button0.setDisabled(True)
+        self.gravity_compensation_screen.left_panel.button1.setDisabled(False)
+        self.gravity_compensation_screen.left_panel.button2.setDisabled(True)
+        self.gravity_compensation_screen.left_panel.button3.setDisabled(False)
 
     def gravity_compensation_start_therapy(self):
 
-        self.gravity_compensation_screen.left_panel.workerThread.start()
-        self.gravity_compensation_screen.left_panel.state = True
+        self.motor_interact.on = True
+        self.gravity_compensation_screen.right_panel.graph.plot()
+        
+        self.gravity_compensation_screen.left_panel.button0.setDisabled(True)
         self.gravity_compensation_screen.left_panel.button1.setDisabled(True)
         self.gravity_compensation_screen.left_panel.button2.setDisabled(False)
-        self.gravity_compensation_screen.left_panel.worker.on = True
+        self.gravity_compensation_screen.left_panel.button3.setDisabled(True)
         self.gravity_compensation_screen.right_panel.button.setDisabled(True)
-        self.gravity_compensation_screen.right_panel.graph.plot()
+
+        self.gravity_compensation_screen.left_panel.input_panel.button.setDisabled(True)
 
     def gravity_compensation_stop(self):
 
-        self.gravity_compensation_screen.left_panel.state = False
+        self.gravity_compensation_screen.left_panel.button0.setDisabled(True)
         self.gravity_compensation_screen.left_panel.button1.setDisabled(False)
         self.gravity_compensation_screen.left_panel.button2.setDisabled(True)
-        self.gravity_compensation_screen.left_panel.worker.on = False
+        self.gravity_compensation_screen.left_panel.button3.setDisabled(False)
         self.gravity_compensation_screen.right_panel.button.setDisabled(False)
-        self.gravity_compensation_screen.left_panel.workerThread.exit(0)
+        self.gravity_compensation_screen.left_panel.input_panel.button.setDisabled(False)
+
+        self.motor_interact.on = False
+        self.workerThread.exit(0)
+
+    def gravity_compensation_go_to_origin(self):
+
+        self.motor_interact.to_origin = True
+        return
 
     def button_press_fwd(self):
 
-        if self.patient_leg_length == 0 or self.patient_weight == 0:
+        self.motor_interact.left_hip = self.initial_screen.left_panel.checkbox1.isChecked()
+        self.motor_interact.left_knee = self.initial_screen.left_panel.checkbox2.isChecked()
+        self.motor_interact.right_hip = self.initial_screen.left_panel.checkbox3.isChecked()
+        self.motor_interact.right_knee = self.initial_screen.left_panel.checkbox4.isChecked()
+
+        if self.patient_height == 0 or self.patient_weight == 0:
             message = PatientDetailsMessage()
             message.exec_()         
         else:
             if self.initial_screen.left_panel.button1.isChecked():
                 self.motor_interact.mode = 1
-                self.setWindowTitle("Rehab Exoskeleton App: Position Control Mode")
+                self.screen_mode = 1
+                self.setWindowTitle("Rehab Exoskeleton App: Automatic Mode")
             elif self.initial_screen.left_panel.button2.isChecked():
                 self.motor_interact.mode = 2
-                self.setWindowTitle("Rehab Exoskeleton App: Gravity Compensation Mode")
-            elif self.initial_screen.left_panel.button3.isChecked():
-                self.motor_interact.mode = 3
-                self.setWindowTitle("Rehab Exoskeleton App: Position Control With Gravity Compensation Mode")
+                self.screen_mode = 2
+                self.setWindowTitle("Rehab Exoskeleton App: Physiotherapist-guided Mode")
             else:
                 message = ModeMessage()
                 message.exec_()         
 
-            self.screens.setCurrentIndex(self.motor_interact.mode)
+            self.screens.setCurrentIndex(self.screen_mode)
 
     def button_press_bwd(self):
-        self.screens.setCurrentIndex(0)
+        if (self.screen_mode <= 2):
+            self.screen_mode = 0
+        elif (self.screen_mode == 3):
+            self.screen_mode = 1
+        self.screens.setCurrentIndex(self.screen_mode)
         self.setWindowTitle("Rehab Exoskeleton App: Home")
 
     def button_press_patient_data(self):
         self.patient_weight = self.initial_screen.middle_panel.line1.text()
-        self.patient_leg_length = self.initial_screen.middle_panel.line2.text()
-        self.gravity_compensation_screen.left_panel.label.setText(f"Patient Weight: {self.patient_weight} kg\nPatient Height: {self.patient_leg_length} m")
+        self.patient_height = self.initial_screen.middle_panel.line2.text()
+        self.gravity_compensation_screen.left_panel.label.setText(f"Patient Weight: {self.patient_weight} kg\nPatient Height: {self.patient_height} m")
+
 
 app = QApplication(sys.argv)
-
 window = MainWindow()
-
 sys.exit(app.exec_())
