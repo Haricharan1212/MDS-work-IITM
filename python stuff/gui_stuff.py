@@ -15,8 +15,8 @@ MINPOSKNEE = -30
 MAXPOSKNEE = 30
 MINPOSHIP = -30
 MAXPOSHIP = 30
-MAXVEL = -15
-MAXPOS = 15
+# MAXVEL = -15
+# MAXPOS = 15
 
 TIMES = [1, 2, 3, 4, 5]
 
@@ -52,7 +52,6 @@ class Plot(QDialog):
         x = TIMES
 
         self.figure.clear()
-
         ax1 = self.figure.add_subplot(211)  
         y = self.data1
 
@@ -475,12 +474,27 @@ class PositionControlFinalScreenLeftPanel(QWidget):
         self.button2.setDisabled(True)
         self.button3.setDisabled(True)
 
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setMinimum(1)
+        self.slider.setMaximum(10)
+        
+        label1 = QLabel("Low")
+        label2 = QLabel("High")
+        layout1 = QHBoxLayout()
+        layout1.addWidget(label1)
+        layout1.addStretch(1)
+        layout1.addWidget(label2)
+        unit = QWidget()
+        unit.setLayout(layout1)
+
         layout.addWidget(self.heading)
         layout.addWidget(self.input_panel)
         layout.addWidget(self.button0)
         layout.addWidget(self.button1)
         layout.addWidget(self.button2)
         layout.addWidget(self.button3)
+        layout.addWidget(self.slider)
+        layout.addWidget(unit)
         layout.addStretch(1)
 
         self.setLayout(layout)
@@ -494,15 +508,11 @@ class PositionControlFinalScreenRightPanel(QWidget):
         self.graph = PlotScreen()
         self.button = QPushButton("Back")                
         self.label = QLabel("Speed")
-        self.slider = QSlider(Qt.Horizontal)
-        self.slider.setMinimum(1)
-        self.slider.setMaximum(10)
         
         layout = QVBoxLayout()
         layout.addWidget(self.heading)
         layout.addWidget(self.graph)
         layout.addWidget(self.label)
-        layout.addWidget(self.slider)
         layout.addStretch(1)
         layout.addWidget(self.button)
         self.setLayout(layout)        
@@ -687,7 +697,7 @@ class MainWindow(QMainWindow):
         self.position_control_final_screen.left_panel.button2.setDisabled(False)
         self.position_control_final_screen.left_panel.button3.setDisabled(True)
         self.position_control_final_screen.right_panel.button.setDisabled(True)
-        self.position_control_final_screen.right_panel.slider.setDisabled(True)
+        self.position_control_final_screen.left_panel.slider.setDisabled(True)
 
         self.position_control_final_screen.left_panel.input_panel.button.setDisabled(True)
 
@@ -699,7 +709,7 @@ class MainWindow(QMainWindow):
         self.position_control_final_screen.left_panel.button3.setDisabled(False)
         self.position_control_final_screen.right_panel.button.setDisabled(False)
         self.position_control_final_screen.left_panel.input_panel.button.setDisabled(False)
-        self.position_control_final_screen.right_panel.slider.setDisabled(False)
+        self.position_control_final_screen.left_panel.slider.setDisabled(False)
 
         self.motor_interact.on = False
         self.workerThread.exit(0)
