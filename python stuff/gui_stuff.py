@@ -428,6 +428,8 @@ class PositionControlScreenLeftPanel(QWidget):
         
         self.trajectory_input = TrajectoryInput()
         self.button = QPushButton("Update")
+
+        self.label = QLabel("Note: Default Values \n have been Provided")
                 
         layout = QVBoxLayout()
 
@@ -435,6 +437,7 @@ class PositionControlScreenLeftPanel(QWidget):
         layout.addWidget(self.trajectory_input)
         layout.addWidget(self.button)
         layout.addStretch(1)
+        layout.addWidget(self.label)
 
         self.setLayout(layout)
         
@@ -505,15 +508,17 @@ class PositionControlFinalScreenLeftPanel(QWidget):
         layout1.addWidget(label2)
         unit = QWidget()
         unit.setLayout(layout1)
-
+        self.label = QLabel("Speed")
+ 
         layout.addWidget(self.heading)
         layout.addWidget(self.input_panel)
+        layout.addWidget(self.label)
+        layout.addWidget(self.slider)
+        layout.addWidget(unit)
         layout.addWidget(self.button0)
         layout.addWidget(self.button1)
         layout.addWidget(self.button2)
         layout.addWidget(self.button3)
-        layout.addWidget(self.slider)
-        layout.addWidget(unit)
         layout.addStretch(1)
 
         self.setLayout(layout)
@@ -526,12 +531,10 @@ class PositionControlFinalScreenRightPanel(QWidget):
         
         self.graph = PlotScreen()
         self.button = QPushButton("Back")                
-        self.label = QLabel("Speed")
         
         layout = QVBoxLayout()
         layout.addWidget(self.heading)
         layout.addWidget(self.graph)
-        layout.addWidget(self.label)
         layout.addStretch(1)
         layout.addWidget(self.button)
         self.setLayout(layout)        
