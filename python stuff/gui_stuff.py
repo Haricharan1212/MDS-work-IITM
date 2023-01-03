@@ -11,12 +11,17 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib import pyplot as plt
 
+import tmotorCAN
+
 MINPOSKNEE = -30
 MAXPOSKNEE = 30
 MINPOSHIP = -30
 MAXPOSHIP = 30
 # MAXVEL = -15
 # MAXPOS = 15
+
+KP = 10
+KD = 1
 
 TIMES = [1, 2, 3, 4, 5]
 
@@ -130,7 +135,7 @@ class MotorInteract(QObject):
         super().__init__()
         self.mode = None
         self.on = False
-        self.index = 0 # For debugging
+        self.index = 0 # For debugging TODO delete
         self.to_origin = False
 
         self.minimum_position_hip = MINPOSHIP
@@ -143,25 +148,39 @@ class MotorInteract(QObject):
         self.right_hip = True
         self.right_knee = True
                 
+        self.left_hip_motor = tmotorCAN.tmotor(2, "ak80-64")       
+        self.right_hip_motor = tmotorCAN.tmotor(3, "ak80-64")       
+        self.left_knee_motor = tmotorCAN.tmotor(4, "ak80-64")       
+        self.right_knee_motor = tmotorCAN.tmotor(5, "ak80-64")       
+                
     def run_motor(self):        
         while True:
             time.sleep(0.01)
-
             if (self.to_origin):
                  # Do something
                  self.to_origin = False                       
             else:
                 if (self.on):
                     if (self.mode == 1):
+
                         print(self.index)
                         time.sleep(1)
                         self.index += 1
                     elif (self.mode == 2):
                         print(self.index)
                         time.sleep(0.1)
-                        self.index += 1                
+                        self.index += 1  
 
-  
+    def start_motors(self):
+        if (self.left_hip):
+            self.left_hip_motor.start_motor()
+        if (self.right_hip):
+            self.right_hip_motor.start_motor()
+        if (self.left_knee):
+            self.left_knee_motor.start_motor()
+        if (self.right_knee):
+            self.right_knee_motor.start_motor()
+    
 class InputPanel(QWidget):
     def __init__(self):
         super().__init__()

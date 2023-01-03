@@ -1,18 +1,16 @@
 import time
 import canlib
 import canlib.canlib as clb
-import numpy as np
 import channel_config
+
+KP = 10
+KD = 1
 
 class tmotor():
     def __init__(self, id, type):
         self.channel = channel_config.start_channel()
         self.id = id
-        
-        frame = canlib.Frame(id_= self.id, data=self.enter_motor_mode(), flags=clb.MessageFlag.STD)
-        self.channel.write(frame)
-        time.sleep(0.001)
-                
+                        
         if (type == "ak80-64"):
             self.P_MIN = -12.5
             self.P_MAX = 12.5
@@ -38,6 +36,14 @@ class tmotor():
             self.T_MAX = 65.0
         else:
             raise ValueError
+
+    def start_motor(self):
+        frame = canlib.Frame(id_= self.id, data=self.enter_motor_mode(), flags=clb.MessageFlag.STD)
+        self.channel.write(frame)
+        time.sleep(0.001)        
+
+    def go_to_origin(self):
+        self.attain(0, 0, 0, KP, KD)
 
     def attain(self, p_in, v_in, t_in, kp, kd):
 
