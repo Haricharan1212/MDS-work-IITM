@@ -1,27 +1,12 @@
-import time
 import tmotorCAN
-import numpy as np
-import trajectory
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-# motor1 = tmotorCAN.tmotor(1, 'ak80-64')
-# motor2 = tmotorCAN.tmotor(2, 'ak80-64')
-# motor3 = tmotorCAN.tmotor(3, 'ak80-64')
-# motor4 = tmotorCAN.tmotor(5, 'ak10-9')
-# motor5 = tmotorCAN.tmotor(6, 'ak10-9')
 
-class Worker(QObject):
+# motor1 = tmotorCAN.tmotor(1, 'AK80-64')
+# motor2 = tmotorCAN.tmotor(2, 'AK80-64')
+# motor = tmotorCAN.tmotor(3, 'AK80-64')
+# motor = tmotorCAN.tmotor(4, 'AK80-64')
+# motor = tmotorCAN.tmotor(5, 'AK10-9')
+motor = tmotorCAN.tmotor(6, 'AK10-9')
 
-    def __init__(self):
-        super().__init__()
-        self.on = False
-        self.index = 0
+motor.start_motor()
 
-    def function1(self):        
-        while True:
-            print(self.index)
-            time.sleep(1)
-            self.index += 1
-            if not self.on:
-                return
+motor.attain(3.14, 0, 0, 10, 1)
