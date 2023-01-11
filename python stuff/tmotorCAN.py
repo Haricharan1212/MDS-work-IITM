@@ -11,7 +11,7 @@ class tmotor():
 
     motors_dict = {}
 
-    def __init__(self, id: int, type: str, K_p: int = 10, K_d: int = 1):
+    def __init__(self, id: int, type: str, K_p: int = 10, K_d: int = 1, minpos=None, maxpos=None):
         """Function which initializes a motor
 
         Args:
@@ -32,6 +32,9 @@ class tmotor():
         self.KP_MAX = 500.0
         self.KD_MIN = 0.0
         self.KD_MAX = 5.0
+
+        self.minpos = minpos
+        self.maxpos = maxpos
 
         self.P_MIN, self.P_MAX, self.V_MIN, self.V_MAX, self.T_MIN, self.T_MAX = self.return_params(
             type)
@@ -118,6 +121,12 @@ class tmotor():
             K_p = self.K_p
         if (K_d == None):
             K_d = self.K_d
+
+        if (self.minpos != None):
+            p_in = max(self.minpos, p_in)
+
+        if (self.maxpos != None):
+            p_in = min(self.maxpos, p_in)
 
         frame = canlib.Frame(id_=self.id, data=self.pack_cmd(
             p_in, v_in, t_in, K_p, K_d), flags=clb.MessageFlag.STD)
@@ -304,3 +313,7 @@ class tmotor():
             return id, p_out, v_out, t_out
         except IndexError:
             return None, None, None, None
+
+    def set_minmax(self, minpos, maxpos):
+        self.minpos = minpos
+        self.maxpos = maxpos

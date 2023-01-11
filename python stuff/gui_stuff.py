@@ -15,10 +15,11 @@ from matplotlib import pyplot as plt
 
 import tmotorCAN
 
-MINPOSKNEE = -30
-MAXPOSKNEE = 30
-MINPOSHIP = -30
-MAXPOSHIP = 30
+# RELATIVE
+MINPOSHIP = -10
+MAXPOSHIP = 35
+MINPOSKNEE = -70
+MAXPOSKNEE = 0
 # MAXVEL = -15
 # MAXPOS = 15
 
@@ -27,13 +28,15 @@ KD = 1
 
 TIMES = [1, 2, 3, 4, 5]
 
+TIMEPERIODS = {1: 1.5, 2: 2.5, 3: 3.5, 4: 4.5, 5: 5.5}
+
 HIP_VALUES = [30, 15, 0, -15, 5]
 KNEE_VALUES = [30, 10, 0, -15, 5]
 
 LEFT_HIP_LINK_INERTIA = 10
 LEFT_KNEE_LINK_INERTIA = 1.5
-RIGHT_HIP_LINK_INERTIA = 0
-RIGHT_KNEE_LINK_INERTIA = 0
+RIGHT_HIP_LINK_INERTIA = 10
+RIGHT_KNEE_LINK_INERTIA = 1.5
 
 
 class Heading(QLabel):
@@ -156,10 +159,19 @@ class MotorInteract(QObject):
         self.right_hip = True
         self.right_knee = True
 
+        # self.left_hip_motor = tmotorCAN.tmotor(
+        #     1, "AK80-64", KP, KD, MINPOSHIP, MAXPOSHIP)
+        # self.left_knee_motor = tmotorCAN.tmotor(
+        #     2, "AK80-64", KP, KD, MINPOSKNEE, MAXPOSKNEE)
+        # self.right_hip_motor = tmotorCAN.tmotor(
+        #     3, "AK80-64", KP, KD, -MAXPOSHIP, -MINPOSKNEE)
+        # self.right_knee_motor = tmotorCAN.tmotor(
+        #     4, "AK80-64", KP, KD, -MAXPOSKNEE, -MINPOSKNEE)
+
         self.left_hip_motor = tmotorCAN.tmotor(1, "AK80-64")
         self.left_knee_motor = tmotorCAN.tmotor(2, "AK80-64")
         self.right_hip_motor = tmotorCAN.tmotor(3, "AK80-64")
-        self.right_knee_motor = tmotorCAN.tmotor(6, "AK10-9")
+        self.right_knee_motor = tmotorCAN.tmotor(4, "AK80-64")
 
         self.left_hip_pos = 0
         self.left_knee_pos = 0
@@ -185,6 +197,8 @@ class MotorInteract(QObject):
         self.right_hip_link_weight = RIGHT_HIP_LINK_INERTIA
         self.right_knee_link_weight = RIGHT_KNEE_LINK_INERTIA
 
+        self.w = TIMEPERIODS[1]
+
     def run_motor(self):
         start_time = time.time()
 
@@ -197,16 +211,16 @@ class MotorInteract(QObject):
                     delta_time = current_time - start_time
                     if (self.left_hip):
                         self.left_hip_motor.attain(
-                            self.left_hip_trajectory(1, delta_time, 0), self.left_hip_trajectory_vel(1, delta_time, 0), 0, 10, 1)
+                            -self.left_hip_trajectory(self.w, delta_time, 0, 1), -self.left_hip_trajectory_vel(self.w, delta_time, 0, 1), 0, 30, 2)
                     if (self.left_knee):
                         self.left_knee_motor.attain(
-                            self.left_knee_trajectory(1, delta_time, 0), self.left_knee_trajectory_vel(1, delta_time, 0), 0, 10, 1)
+                            -self.left_knee_trajectory(self.w, delta_time, 0, 1), -self.left_knee_trajectory_vel(self.w, delta_time, 0, 1), 0, 10, 1)
                     if (self.right_hip):
                         self.right_hip_motor.attain(
-                            -self.right_hip_trajectory(1, delta_time, 0), -self.right_hip_trajectory_vel(1, delta_time, 0), 0, 10, 1)
+                            self.right_hip_trajectory(self.w, delta_time, 0, -1), self.right_hip_trajectory_vel(self.w, delta_time, 0, -1), 0, 30, 3)
                     if (self.right_knee):
                         self.right_knee_motor.attain(
-                            -self.right_knee_trajectory(1, delta_time, 0), -self.right_knee_trajectory_vel(1, delta_time, 0), 0, 10, 1)
+                            self.right_knee_trajectory(self.w, delta_time, 0, -1), self.right_knee_trajectory_vel(self.w, delta_time, 0, -1), 0, 10, 1)
 
                 elif (self.mode == 2):
                     # gravity compensation mode
@@ -619,10 +633,10 @@ class PositionControlFinalScreenLeftPanel(QWidget):
 
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(1)
-        self.slider.setMaximum(10)
+        self.slider.setMaximum(5)
 
-        label1 = QLabel("Low")
-        label2 = QLabel("High")
+        label1 = QLabel("High Speed")
+        label2 = QLabel("Low Speed")
         layout1 = QHBoxLayout()
         layout1.addWidget(label1)
         layout1.addStretch(1)
@@ -896,6 +910,11 @@ class MainWindow(QMainWindow):
         return
 
     def gravity_compensation_start_motor(self):
+
+        self.motor_interact.minimum_position_hip = self.gravity_compensation_screen.left_panel.input_panel.input1.text()
+        self.motor_interact.maximum_position_hip = self.gravity_compensation_screen.left_panel.input_panel.input2.text()
+        self.motor_interact.minimum_position_knee = self.gravity_compensation_screen.left_panel.input_panel.input3.text()
+        self.motor_interact.minimum_position_knee = self.gravity_compensation_screen.left_panel.input_panel.input4.text()
 
         self.motor_interact.start_motors()
 

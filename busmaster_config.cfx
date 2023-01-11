@@ -61,7 +61,7 @@
           <AccMaskByte3_1>FF</AccMaskByte3_1>
           <AccMaskByte4_0>FF</AccMaskByte4_0>
           <AccMaskByte4_1>FF</AccMaskByte4_1>
-          <HardwareDesc>Kvaser - Kvaser Leaf Light v2 #0 (Channel 0), Serial Number- 0, Firmware- 0x0000030a 0x00040012</HardwareDesc>
+          <HardwareDesc/>
           <ItemUnderFocus>0</ItemUnderFocus>
           <BTR0BTR1>20</BTR0BTR1>
           <AccFilterMode>0</AccFilterMode>
