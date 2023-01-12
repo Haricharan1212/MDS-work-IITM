@@ -122,14 +122,16 @@ class tmotor():
         if (K_d == None):
             K_d = self.K_d
 
-        if (self.minpos != None):
-            p_in = max(self.minpos, p_in)
+        if (self.minpos != None and p_in < self.minpos):
+            frame = canlib.Frame(id_=self.id, data=self.pack_cmd(
+                self.minpos, 0, t_in, 70, 5), flags=clb.MessageFlag.STD)
+        elif (self.maxpos != None and p_in > self.maxpos):
+            frame = canlib.Frame(id_=self.id, data=self.pack_cmd(
+                self.maxpos, 0, t_in, 70, 5), flags=clb.MessageFlag.STD)
+        else:
+            frame = canlib.Frame(id_=self.id, data=self.pack_cmd(
+                p_in, v_in, t_in, K_p, K_d), flags=clb.MessageFlag.STD)
 
-        if (self.maxpos != None):
-            p_in = min(self.maxpos, p_in)
-
-        frame = canlib.Frame(id_=self.id, data=self.pack_cmd(
-            p_in, v_in, t_in, K_p, K_d), flags=clb.MessageFlag.STD)
         self.channel.write(frame)
 
     def constrain(self, value: float, min_value: float, max_value: float) -> float:

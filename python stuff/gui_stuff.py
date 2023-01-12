@@ -1,3 +1,5 @@
+from datetime import datetime
+import matplotlib.style
 import sys
 
 from PyQt5.QtCore import *
@@ -15,28 +17,41 @@ from matplotlib import pyplot as plt
 
 import tmotorCAN
 
+from functools import lru_cache
+
+from matplotlib import rcParams
+rcParams['path.simplify'] = False
+
+matplotlib.style.use('fast')
+
+
 # RELATIVE
-MINPOSHIP = -10
-MAXPOSHIP = 35
-MINPOSKNEE = -70
-MAXPOSKNEE = 0
+MINPOSHIP = -30 * np.pi / 180
+MAXPOSHIP = 30 * np.pi / 180
+MINPOSKNEE = -30 * np.pi / 180
+MAXPOSKNEE = 30 * np.pi / 180
 # MAXVEL = -15
 # MAXPOS = 15
 
-KP = 10
+KP = 30
 KD = 1
 
 TIMES = [1, 2, 3, 4, 5]
 
-TIMEPERIODS = {1: 1.5, 2: 2.5, 3: 3.5, 4: 4.5, 5: 5.5}
+# MOTOR has reverse sign conventions
+
+OMEGAS = {1: 2 * np.pi / 2.5, 2: 2 * np.pi / 3.5, 3: 2 *
+          np.pi / 4.5, 4: 2 * np.pi / 5.5, 5: 2 * np.pi / 6.5}
 
 HIP_VALUES = [30, 15, 0, -15, 5]
 KNEE_VALUES = [30, 10, 0, -15, 5]
 
-LEFT_HIP_LINK_INERTIA = 10
-LEFT_KNEE_LINK_INERTIA = 1.5
-RIGHT_HIP_LINK_INERTIA = 10
-RIGHT_KNEE_LINK_INERTIA = 1.5
+LEFT_HIP_LINK_TORQUE = 10
+LEFT_KNEE_LINK_TORQUE = 1.5
+RIGHT_HIP_LINK_TORQUE = 10
+RIGHT_KNEE_LINK_TORQUE = 1.5
+
+NUMS = 50
 
 
 class Heading(QLabel):
@@ -100,6 +115,17 @@ class Plot(QDialog):
         self.canvas.draw()
 
 
+class PlotData(QObject):
+    def __init__(self):
+        super().__init__()
+
+        self.times = np.arange(-NUMS/10, 0, 0.1)
+        self.data1 = np.arange(0, NUMS, 1)
+        self.data2 = np.arange(0, NUMS, 1)
+        self.data3 = np.arange(0, NUMS, 1)
+        self.data4 = np.arange(0, NUMS, 1)
+
+
 class PlotScreen(QDialog):
 
     def __init__(self):
@@ -115,29 +141,42 @@ class PlotScreen(QDialog):
 
         self.setLayout(layout)
 
+        self.data_object = PlotData()
+
     def plot(self):
 
         self.figure.clear()
-
-        self.data1 = [0 for i in range(10)]
         ax1 = self.figure.add_subplot(221)
-        ax1.plot(self.data1, '*-')
+        ax1.plot(self.data_object.times[-NUMS:],
+                 self.data_object.data1[-NUMS:], '-')
         ax1.set_title("Left Hip")
+        ax1.set_xlim(
+            self.data_object.times[-1] - 5, self.data_object.times[-1])
+        ax1.set_ylim([-100, 100])
 
-        self.data2 = [0 for i in range(10)]
         ax2 = self.figure.add_subplot(222)
-        ax2.plot(self.data2, '*-')
-        ax2.set_title("Right Hip")
+        ax2.plot(self.data_object.times[-NUMS:],
+                 self.data_object.data2[-NUMS:], '-')
+        ax2.set_title("Left Knee")
+        ax2.set_xlim(
+            self.data_object.times[-1] - 5, self.data_object.times[-1])
+        ax2.set_ylim([-100, 100])
 
-        self.data3 = [0 for i in range(10)]
         ax3 = self.figure.add_subplot(223)
-        ax3.plot(self.data3, '*-')
-        ax3.set_title("Left Knee")
+        ax3.plot(self.data_object.times[-NUMS:],
+                 self.data_object.data3[-NUMS:], '-')
+        ax3.set_title("Right Hip")
+        ax3.set_xlim(
+            self.data_object.times[-1] - 5, self.data_object.times[-1])
+        ax3.set_ylim([-100, 100])
 
-        self.data4 = [0 for i in range(10)]
         ax4 = self.figure.add_subplot(224)
-        ax4.plot(self.data4, '*-')
+        ax4.plot(self.data_object.times[-NUMS:],
+                 self.data_object.data4[-NUMS:], '-')
         ax4.set_title("Right Knee")
+        ax4.set_xlim(
+            self.data_object.times[-1] - 5, self.data_object.times[-1])
+        ax4.set_ylim([-100, 100])
 
         self.figure.tight_layout(pad=3)
         self.canvas.draw()
@@ -159,19 +198,19 @@ class MotorInteract(QObject):
         self.right_hip = True
         self.right_knee = True
 
-        # self.left_hip_motor = tmotorCAN.tmotor(
-        #     1, "AK80-64", KP, KD, MINPOSHIP, MAXPOSHIP)
-        # self.left_knee_motor = tmotorCAN.tmotor(
-        #     2, "AK80-64", KP, KD, MINPOSKNEE, MAXPOSKNEE)
-        # self.right_hip_motor = tmotorCAN.tmotor(
-        #     3, "AK80-64", KP, KD, -MAXPOSHIP, -MINPOSKNEE)
-        # self.right_knee_motor = tmotorCAN.tmotor(
-        #     4, "AK80-64", KP, KD, -MAXPOSKNEE, -MINPOSKNEE)
+        self.left_hip_motor = tmotorCAN.tmotor(
+            1, "AK80-64", 30, 3, MINPOSHIP, MAXPOSHIP)
+        self.left_knee_motor = tmotorCAN.tmotor(
+            2, "AK80-64", 3, 0.5, MINPOSKNEE, MAXPOSKNEE)
+        self.right_hip_motor = tmotorCAN.tmotor(
+            3, "AK80-64", 30, 3, MINPOSHIP, MAXPOSHIP)
+        self.right_knee_motor = tmotorCAN.tmotor(
+            4, "AK80-64", 3, 0.5, MINPOSKNEE, MAXPOSKNEE)
 
-        self.left_hip_motor = tmotorCAN.tmotor(1, "AK80-64")
-        self.left_knee_motor = tmotorCAN.tmotor(2, "AK80-64")
-        self.right_hip_motor = tmotorCAN.tmotor(3, "AK80-64")
-        self.right_knee_motor = tmotorCAN.tmotor(4, "AK80-64")
+        # self.left_hip_motor = tmotorCAN.tmotor(1, "AK80-64")
+        # self.left_knee_motor = tmotorCAN.tmotor(2, "AK80-64")
+        # self.right_hip_motor = tmotorCAN.tmotor(3, "AK80-64")
+        # self.right_knee_motor = tmotorCAN.tmotor(4, "AK80-64")
 
         self.left_hip_pos = 0
         self.left_knee_pos = 0
@@ -192,23 +231,24 @@ class MotorInteract(QObject):
         self.left_knee_trajectory_vel = trajectory.omega_6
         self.right_knee_trajectory_vel = trajectory.omega_6
 
-        self.left_hip_link_weight = LEFT_HIP_LINK_INERTIA
-        self.left_knee_link_weight = LEFT_KNEE_LINK_INERTIA
-        self.right_hip_link_weight = RIGHT_HIP_LINK_INERTIA
-        self.right_knee_link_weight = RIGHT_KNEE_LINK_INERTIA
+        self.left_hip_link_weight = LEFT_HIP_LINK_TORQUE
+        self.left_knee_link_weight = LEFT_KNEE_LINK_TORQUE
+        self.right_hip_link_weight = RIGHT_HIP_LINK_TORQUE
+        self.right_knee_link_weight = RIGHT_KNEE_LINK_TORQUE
 
-        self.w = TIMEPERIODS[1]
+        self.w = OMEGAS[1]
 
     def run_motor(self):
         start_time = time.time()
-
+        i = 0
         while True:
             time.sleep(0.01)
             if (self.on):
+
+                current_time = time.time()
+                delta_time = current_time - start_time
                 if (self.mode == 1):
                     # position tracking mode
-                    current_time = time.time()
-                    delta_time = current_time - start_time
                     if (self.left_hip):
                         self.left_hip_motor.attain(
                             -self.left_hip_trajectory(self.w, delta_time, 0, 1), -self.left_hip_trajectory_vel(self.w, delta_time, 0, 1), 0, 30, 2)
@@ -227,16 +267,16 @@ class MotorInteract(QObject):
 
                     if (self.left_hip):
                         self.left_hip_motor.attain(
-                            self.left_hip_pos, self.left_hip_vel, LEFT_HIP_LINK_INERTIA * np.sin(self.left_hip_pos), 10, 1)
+                            self.left_hip_pos, self.left_hip_vel, LEFT_HIP_LINK_TORQUE * np.sin(self.left_hip_pos), 5, 0.5)
                     if (self.left_knee):
                         self.left_knee_motor.attain(
-                            self.left_knee_pos, self.left_knee_vel, LEFT_KNEE_LINK_INERTIA * np.sin(self.left_hip_pos + self.left_knee_pos), 10, 1)
+                            self.left_knee_pos, self.left_knee_vel, LEFT_KNEE_LINK_TORQUE * np.sin(self.left_hip_pos + self.left_knee_pos), 1, 0.3)
                     if (self.right_hip):
                         self.right_hip_motor.attain(
-                            self.right_hip_pos, self.right_hip_vel, RIGHT_HIP_LINK_INERTIA * np.sin(self.right_hip_pos), 10, 1)
+                            self.right_hip_pos, self.right_hip_vel, RIGHT_HIP_LINK_TORQUE * np.sin(self.right_hip_pos), 5, 0.5)
                     if (self.right_knee):
                         self.right_knee_motor.attain(
-                            self.right_knee_pos, self.right_knee_vel, RIGHT_KNEE_LINK_INERTIA * np.sin(self.right_hip_pos + self.right_knee_pos), 10, 1)
+                            self.right_knee_pos, self.right_knee_vel, RIGHT_KNEE_LINK_TORQUE * np.sin(self.right_hip_pos + self.right_knee_pos), 1, 0.3)
 
                 data = []
                 for i in range(self.left_hip + self.right_hip + self.left_knee + self.right_knee):
@@ -273,6 +313,9 @@ class MotorInteract(QObject):
                         self.right_knee_vel = temp_data[self.right_knee_motor.id][1]
                     except KeyError:
                         pass
+
+                function((delta_time, self.left_hip_pos, self.left_knee_pos,
+                         self.right_hip_pos, self.right_knee_pos))
 
     def start_motors(self):
         if (self.left_hip):
@@ -389,22 +432,30 @@ class InitialScreenMiddlePanel(QWidget):
 
         self.heading = Heading("Patient Details")
 
+        self.label0 = QLabel("Patient Name")
+        self.line0 = QLineEdit()
         self.label1 = QLabel("Patient Weight (in kilograms)")
         self.line1 = QLineEdit()
-        self.label2 = QLabel("Patient Height (in metre)")
+        self.label2 = QLabel("Link 1 Length (in metre)")
         self.line2 = QLineEdit()
+        self.label3 = QLabel("Link 2 Length (in metre)")
+        self.line3 = QLineEdit()
 
-        for line in self.line1, self.line2:
+        for line in self.line1, self.line2, self.line3:
             line.setMaxLength(3)
 
         self.button = QPushButton("Save Patient Data")
 
         layout = QVBoxLayout()
         layout.addWidget(self.heading)
+        layout.addWidget(self.label0)
+        layout.addWidget(self.line0)
         layout.addWidget(self.label1)
         layout.addWidget(self.line1)
         layout.addWidget(self.label2)
         layout.addWidget(self.line2)
+        layout.addWidget(self.label3)
+        layout.addWidget(self.line3)
         layout.addStretch(1)
         layout.addWidget(self.button)
 
@@ -634,7 +685,8 @@ class PositionControlFinalScreenLeftPanel(QWidget):
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(1)
         self.slider.setMaximum(5)
-
+        self.slider.setTickInterval(5)
+        self.slider.setTickPosition(QSlider.TickPosition.TicksAbove)
         label1 = QLabel("High Speed")
         label2 = QLabel("Low Speed")
         layout1 = QHBoxLayout()
@@ -750,8 +802,10 @@ class MainWindow(QMainWindow):
 
         super().__init__()
 
-        self.patient_height = 0
-        self.patient_weight = 0
+        self.patient_ll1 = None
+        self.patient_ll2 = None
+        self.patient_name = None
+        self.patient_weight = None
 
         font = self.font()
         font.setPointSize(18)
@@ -803,15 +857,23 @@ class MainWindow(QMainWindow):
             self.position_control_go_to_origin)
         self.position_control_final_screen.left_panel.input_panel.button.clicked.connect(
             self.input_panel_button_pressed)
+        self.position_control_final_screen.left_panel.slider.valueChanged.connect(
+            self.function)
 
         # self.position_control_with_gravity_screen = PositionContolWithGravityScreen()
         # self.position_control_with_gravity_screen.right_panel.button.clicked.connect(self.button_press_bwd)
 
         self.motor_interact = MotorInteract()
-        self.workerThread = QThread()
-        self.motor_interact.moveToThread(self.workerThread)
-        self.workerThread.started.connect(self.motor_interact.run_motor)
-        # self.workerThread.finished.connect()
+        self.worker_thread = QThread()
+        self.motor_interact.moveToThread(self.worker_thread)
+        self.worker_thread.started.connect(self.motor_interact.run_motor)
+        # self.worker_thread.finished.connect()
+
+        self.plot_thread = QThread()
+        self.position_control_final_screen.right_panel.graph.data_object.moveToThread(
+            self.plot_thread)
+        self.gravity_compensation_screen.right_panel.graph.data_object.moveToThread(
+            self.plot_thread)
 
         self.screens.addWidget(self.initial_screen)
         self.screens.addWidget(self.position_control_screen)
@@ -823,6 +885,10 @@ class MainWindow(QMainWindow):
         self.screens.setCurrentIndex(self.screen_mode)
         self.setCentralWidget(self.screens)
         self.show()
+
+    def function(self):
+        self.motor_interact.w = OMEGAS[self.position_control_final_screen.left_panel.slider.value(
+        )]
 
     def button_press_continue(self):
         self.screen_mode = 3
@@ -844,7 +910,6 @@ class MainWindow(QMainWindow):
 
         self.position_control_screen.right_panel.graph.data1 = data1
         self.position_control_screen.right_panel.graph.data2 = data2
-        self.position_control_screen.right_panel.graph.plot()
 
         self.position_control_screen.right_panel.button1.setDisabled(False)
 
@@ -858,7 +923,7 @@ class MainWindow(QMainWindow):
         self.motor_interact.start_motors()
 
         self.motor_interact.on = False
-        self.workerThread.start()
+        self.worker_thread.start()
 
         self.position_control_final_screen.left_panel.button0.setDisabled(True)
         self.position_control_final_screen.left_panel.button1.setDisabled(
@@ -871,7 +936,6 @@ class MainWindow(QMainWindow):
     def position_control_start_therapy(self):
 
         self.motor_interact.on = True
-        self.position_control_final_screen.right_panel.graph.plot()
 
         self.position_control_final_screen.left_panel.button0.setDisabled(True)
         self.position_control_final_screen.left_panel.button1.setDisabled(True)
@@ -903,7 +967,7 @@ class MainWindow(QMainWindow):
 
         self.motor_interact.turn_off()
         self.motor_interact.on = False
-        self.workerThread.exit(0)
+        self.worker_thread.exit(0)
 
     def position_control_go_to_origin(self):
         self.motor_interact.go_to_origin()
@@ -919,7 +983,7 @@ class MainWindow(QMainWindow):
         self.motor_interact.start_motors()
 
         self.motor_interact.on = False
-        self.workerThread.start()
+        self.worker_thread.start()
 
         self.gravity_compensation_screen.left_panel.button0.setDisabled(True)
         self.gravity_compensation_screen.left_panel.button1.setDisabled(False)
@@ -931,7 +995,7 @@ class MainWindow(QMainWindow):
     def gravity_compensation_start_therapy(self):
 
         self.motor_interact.on = True
-        self.gravity_compensation_screen.right_panel.graph.plot()
+        # self.gravity_compensation_screen.right_panel.graph.plot()
 
         self.gravity_compensation_screen.left_panel.button0.setDisabled(True)
         self.gravity_compensation_screen.left_panel.button1.setDisabled(True)
@@ -953,7 +1017,7 @@ class MainWindow(QMainWindow):
 
         self.motor_interact.turn_off()
         self.motor_interact.on = False
-        self.workerThread.exit(0)
+        self.worker_thread.exit(0)
 
     def gravity_compensation_go_to_origin(self):
 
@@ -967,7 +1031,20 @@ class MainWindow(QMainWindow):
         self.motor_interact.right_hip = self.initial_screen.left_panel.checkbox3.isChecked()
         self.motor_interact.right_knee = self.initial_screen.left_panel.checkbox4.isChecked()
 
-        if self.patient_height == 0 or self.patient_weight == 0:
+        self.patient_name = (self.initial_screen.middle_panel.line0.text())
+        self.patient_weight = int(
+            self.initial_screen.middle_panel.line1.text())
+        self.patient_ll1 = int(self.initial_screen.middle_panel.line2.text())
+        self.patient_ll2 = int(self.initial_screen.middle_panel.line3.text())
+
+        self.motor_interact.left_hip_link_weight = LEFT_HIP_LINK_TORQUE + \
+            (0.1 * self.patient_weight) * (self.patient_ll1 * 0.54) * 9.8
+        self.motor_interact.left_knee_link_weight = LEFT_HIP_LINK_TORQUE + ((0.0465 * self.patient_weight) * (
+            self.patient_ll1 * 0.528) + (0.0145 * self.patient_weight) * (self.patient_ll1)) * 9.8
+        self.motor_interact.right_hip_link_weight = self.motor_interact.left_hip_link_weight
+        self.motor_interact.right_knee_link_weight = self.motor_interact.left_knee_link_weight
+
+        if self.patient_height == None or self.patient_ll1 == None or self.patient_ll2 == None or self.patient_name == None:
             message = PatientDetailsMessage()
             message.exec_()
         else:
@@ -1004,7 +1081,54 @@ class MainWindow(QMainWindow):
         super(QMainWindow, self).closeEvent(*args, **kwargs)
         self.motor_interact.turn_off()
 
+        time.sleep(1)
+
+        obj = self.position_control_final_screen.right_panel.graph.data_object
+        objj = self.gravity_compensation_screen.right_panel.graph.data_object
+
+        today = datetime.now()
+
+        date = today.strftime("%d-%m-%y_%H-%M")
+
+        if (self.patient_name != None):
+            np.savetxt(f"{self.patient_name}_{date}.txt", np.array(
+                [obj.times, obj.data1, obj.data2, obj.data3, obj.data4, objj.times, objj.data1, objj.data2, objj.data3, objj.data4]))
+
 
 app = QApplication(sys.argv)
 window = MainWindow()
+
+
+def function(data):
+
+    if window.motor_interact.mode == 1:
+        window.position_control_final_screen.right_panel.graph.data_object.times = np.concatenate((window.position_control_final_screen.right_panel.graph.data_object.times,
+                                                                                                   [data[0]]))
+        window.position_control_final_screen.right_panel.graph.data_object.data1 = np.concatenate((
+            window.position_control_final_screen.right_panel.graph.data_object.data1, [data[1] * 180/np.pi]))
+        window.position_control_final_screen.right_panel.graph.data_object.data2 = np.concatenate((
+            window.position_control_final_screen.right_panel.graph.data_object.data2, [data[2] * 180/np.pi]))
+        window.position_control_final_screen.right_panel.graph.data_object.data3 = np.concatenate((
+            window.position_control_final_screen.right_panel.graph.data_object.data3, [data[3] * 180/np.pi]))
+        window.position_control_final_screen.right_panel.graph.data_object.data4 = np.concatenate((
+            window.position_control_final_screen.right_panel.graph.data_object.data4, [data[4] * 180/np.pi]))
+
+        window.position_control_final_screen.right_panel.graph.plot()
+
+    elif window.motor_interact.mode == 2:
+
+        window.gravity_compensation_screen.right_panel.graph.data_object.times = np.concatenate((window.gravity_compensation_screen.right_panel.graph.data_object.times,
+                                                                                                 [data[0]]))
+        window.gravity_compensation_screen.right_panel.graph.data_object.data1 = np.concatenate((window.gravity_compensation_screen.right_panel.graph.data_object.data1,
+                                                                                                 [data[1] * 180/np.pi]))
+        window.gravity_compensation_screen.right_panel.graph.data_object.data2 = np.concatenate((window.gravity_compensation_screen.right_panel.graph.data_object.data2,
+                                                                                                 [data[2] * 180/np.pi]))
+        window.gravity_compensation_screen.right_panel.graph.data_object.data3 = np.concatenate((window.gravity_compensation_screen.right_panel.graph.data_object.data3,
+                                                                                                 [data[3] * 180/np.pi]))
+        window.gravity_compensation_screen.right_panel.graph.data_object.data4 = np.concatenate((window.gravity_compensation_screen.right_panel.graph.data_object.data4,
+                                                                                                 [data[4] * 180/np.pi]))
+
+        window.gravity_compensation_screen.right_panel.graph.plot()
+
+
 sys.exit(app.exec_())
