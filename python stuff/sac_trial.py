@@ -3,9 +3,10 @@ import time
 import numpy as np
 import tmotorCAN
 import numpy as np
-# from simple_pendulum.controllers.ilqr.iLQR_MPC_controller import iLQRMPCController
+from simple_pendulum.controllers.ilqr.iLQR_MPC_controller import iLQRMPCController
 from simple_pendulum.controllers.lqr.lqr_controller import LQRController
 from matplotlib import pyplot as plt
+
 
 def prepare_empty(dt, tf):
     n = int(tf/dt)
@@ -36,7 +37,8 @@ def prepare_empty(dt, tf):
                  "t": tf}
     return data_dict
 
-def ak80_6(controller, kp=0., kd=0., dt=0.005, tf=10., torque_limit = 10):
+
+def ak80_6(controller, kp=0., kd=0., dt=0.005, tf=10., torque_limit=10):
 
     n = int(tf/dt)
 
@@ -44,16 +46,14 @@ def ak80_6(controller, kp=0., kd=0., dt=0.005, tf=10., torque_limit = 10):
 
     kp_in = kp
     kd_in = kd
-    
-    motor = tmotorCAN.tmotor(1, 'ak80-64')
+
+    motor = tmotorCAN.tmotor(3, 'AK80-64')
+    motor.start_motor()
 
     meas_pos, meas_vel, meas_tau = 0, 0, 0
 
     motor.attain(meas_pos, meas_vel, meas_tau, kp, kd)
     time.sleep(2)
-
-    print("After enabling motor, pos: ", meas_pos, ", vel: ", meas_vel,
-          ", tau: ", meas_tau)
 
     i = 0
     meas_dt = 0.0
@@ -61,13 +61,18 @@ def ak80_6(controller, kp=0., kd=0., dt=0.005, tf=10., torque_limit = 10):
     vel_filtered = 0
     start = time.time()
 
+    sp = np.linspace(0, np.pi/3, n)
+
     try:
         while i < n:
             start_loop = time.time()
             meas_time += meas_dt
 
-            des_pos, des_vel, des_tau = controller.get_control_output(meas_pos, vel_filtered, meas_tau, meas_time)
-            
+            control_method.set_goal([sp[i], 0.1])
+
+            des_pos, des_vel, des_tau = controller.get_control_output(
+                meas_pos, meas_vel, meas_tau, meas_time)
+
             if des_pos is None:
                 des_pos = 0
                 kp_in = 0
@@ -82,8 +87,16 @@ def ak80_6(controller, kp=0., kd=0., dt=0.005, tf=10., torque_limit = 10):
 
             # kp_in = 0
             # kd_in = 0
-            meas_pos, meas_vel, meas_tau = motor.attain(des_pos, des_vel, des_tau, kp_in, kd_in)
 
+            print(des_tau)
+
+            des_tau = max(des_tau, -torque_limit)
+            des_tau = min(des_tau, torque_limit)
+
+            motor.attain(
+                des_pos, des_vel, des_tau, kp_in, kd_in)
+
+            idd, meas_pos, meas_vel, meas_tau = tmotorCAN.tmotor.read_can()
             # filter noisy velocity measurements
             # if i > 0:
             #     vel_filtered = np.mean(data_dict["meas_vel_list"][max(0, i-10):i])
@@ -156,29 +169,6 @@ def ak80_6(controller, kp=0., kd=0., dt=0.005, tf=10., torque_limit = 10):
 
 # --------
 
-mass = 0.5
-length = 0.44
-inertia = (mass*(length**2))/3
-damping = 0.1
-gravity = 9.81
-coulomb_fric = 0.0
-torque_limit = 100
-
-control_method = LQRController(mass=mass,
-                           length=length,
-                           damping=damping,
-                           coulomb_fric=coulomb_fric,
-                           gravity=gravity,
-                           torque_limit=torque_limit,
-                           moment_of_inertia=(mass * (length**2)) / 3,
-                           Q=np.diag([0.1, 0.01]),
-                           R=np.array([[0.01]]),
-                           compute_RoA=False)
-
-control_method.set_goal([-1.57, 0])
-
-# --------
-
 # mass = 0.5
 # length = 0.44
 # inertia = (mass*(length**2))/3
@@ -187,57 +177,81 @@ control_method.set_goal([-1.57, 0])
 # coulomb_fric = 0.0
 # torque_limit = 100
 
-# gr= 6
-# kp= 0
-# kd= 0
-# mass= 0.6755 # 0.57288
-# damping= 0.35
-# dt= 0.010
-# runtime= 20
+# control_method = LQRController(mass=mass,
+#                            length=length,
+#                            damping=damping,
+#                            coulomb_fric=coulomb_fric,
+#                            gravity=gravity,
+#                            torque_limit=torque_limit,
+#                            moment_of_inertia=(mass * (length**2)) / 3,
+#                            Q=np.diag([0.1, 0.01]),
+#                            R=np.array([[0.01]]),
+#                            compute_RoA=False)
 
-# #ilqr specific parameters
-# n_horizon= 50
-# n_x= 2
-# dt= 0.02
-# t_final= 10.0
-# x0= np.array([0.0, 0.0])
-# sCu= 50.0
-# sCp= 5.0
-# sCv= 1.0
-# sCen= 10.0
-# fCp= 5.0
-# fCv= 1.0
-# fCen= 80.0
-# dynamics= 'runge_kutta'
-# max_iter= 1
-# break_cost_redu= 0.1
+# control_method.set_goal([-1.57, 0])
 
-# control_method = iLQRMPCController(
-#                             mass=mass,
-#                             length=length,
-#                             damping=damping,
-#                             coulomb_friction=coulomb_fric,
-#                             gravity=gravity,
-#                             dt=dt,
-#                             n=n_horizon,
-#                             max_iter=max_iter,
-#                             break_cost_redu=break_cost_redu,
-#                             sCu=sCu,
-#                             sCp=sCp,
-#                             sCv=sCv,
-#                             sCen=sCen,
-#                             fCp=fCp,
-#                             fCv=fCv,
-#                             fCen=fCen,
-#                             dynamics=dynamics,
-#                             n_x=n_x)
+# --------
 
-# control_method.set_goal(np.array([np.pi, 0]))
-# control_method.init(x0=x0)
+mass = 1.4
+length = 0.49 + 0.40
+inertia = ((0.4)*(0.89**2))/3 + 1.0 * 0.49 ** 2
+damping = 0.1
+gravity = 9.81
+coulomb_fric = 0.0
+torque_limit = 100
+
+# gr = 6
+# kp = 0
+# kd = 0
+# mass = 0.6755  # 0.57288
+# damping = 0.35
+# dt = 0.010
+# runtime = 20
+
+# ilqr specific parameters
+n_horizon = 50
+n_x = 2
+dt = 0.01
+t_final = 10.0
+x0 = np.array([0.0, 0.0])
+sCu = 1.0
+sCp = 300
+sCv = 10
+sCen = 0.0
+fCp = 10.0
+fCv = 10.0
+fCen = 0
+dynamics = 'runge_kutta'
+max_iter = 10
+break_cost_redu = 1e-6
+
+control_method = iLQRMPCController(
+    mass=mass,
+    length=length,
+    damping=damping,
+    coulomb_friction=coulomb_fric,
+    gravity=gravity,
+    dt=dt,
+    n=n_horizon,
+    max_iter=max_iter,
+    break_cost_redu=break_cost_redu,
+    sCu=sCu,
+    sCp=sCp,
+    sCv=sCv,
+    sCen=sCen,
+    fCp=fCp,
+    fCv=fCv,
+    fCen=fCen,
+    dynamics=dynamics,
+    n_x=n_x)
+
+control_method.set_goal(np.array([np.pi/3, 0.1]))
+control_method.init(x0=x0)
 
 
 data_dict = {}
-start, end, meas_dt, data_dict = ak80_6(control_method, dt=0.05, tf=5., torque_limit=100)
+start, end, meas_dt, data_dict = ak80_6(
+    control_method, dt=0.2, tf=20., torque_limit=20)
 
 plt.plot(data_dict["meas_pos_list"])
 plt.plot(data_dict["des_tau_list"])

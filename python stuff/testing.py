@@ -9,4 +9,4 @@ motor1 = tmotorCAN.tmotor(1, 'AK80-64')
 
 motor1.start_motor()
 
-motor1.attain(1, 0, 0, 10, 1)
+motor1.attain(0, 0, 0, 10, 1)
